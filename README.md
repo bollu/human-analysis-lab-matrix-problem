@@ -14,7 +14,18 @@ Provide proofs of complexity of algorithms.
 ## Thoughts as I solve this
 
 - There is some annoying bug with block size ≠ diagonal size, will fix.
+- Of course not, there's no bug, I'm just retarded. Assume `D = 7, B = 3`, all
+  of my assumptions about indexing (neatly picking up a block) will screw up?
+  Check that I'm not assuming something about the shape. I'm pretty sure I am.
+   The problem is most likely at the part where when you block multiple, you'll
+  take a block of size `DxD`, which needs to be picked up correctly from the
+   other matrices. Too sleepy right now.
 
+- I'll probably do this for now: add a method called `ix(i, j)` which allows
+for "real" indeces to be passed, from which we then figure out how to index
+into the matrix. This is inefficient, so I assume you could provide a template
+instance for `matmul<D, D, T>` which is specialized for the case when `D = B`.
+This can be used to implement a "naive" inverse, but this is obviously bad.
 
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is

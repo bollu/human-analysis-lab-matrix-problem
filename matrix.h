@@ -102,17 +102,18 @@ void printRaw(const RawMatrix<D, B, T> &raw) {
 template<int D, int B, typename T>
 RawMatrix<D, B, T> mkRawMatrix(DiagMatrix<D, B, T> m) {
     RawMatrix<D, B, T> raw;
-    for(int r = 0; r < B; r++) {
-        for(int c = 0; c < B; c++) {
-            for(int ri = 0; ri < D; ri++) {
-                for(int ci = 0; ci < D; ci++) {
-                    if (ri == ci) {
-                        raw[r * D + ri][c * D + ci] = m.blocks[r][c][ri];
-                    }
-                    else {
-                        raw[r * D + ri][c * D + ci] = 0;
-                    }
-                }
+    for(int i = 0; i < D*B; i++) {
+        for(int j = 0; j < D*B; j++) {
+            const int iblock = i / D;
+            const int jblock = j / D;
+            const int iinner = i % D;
+            const int jinner = j % D;
+
+            if(iinner == jinner) {
+                raw[i][j] = m.blocks[iblock][jblock][iinner];
+            }
+            else {
+               raw[i][j] = 0;
             }
         }
     }
@@ -223,9 +224,14 @@ template<int D, int B, typename T>
 void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
     //  DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
     DiagMatrix<D, B, T> diag  = d1;
+    std::cout<<"\nMULDIAG:\n";
+    printDiag<D, B, T>(d1);
+    std::cout<<"\n====\n";
 
     RawMatrix<D, B, T> raw = mulRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d1), 
             mkRawMatrix<D, B, T>(d2));
+    std::cout<<"\nMULRAW:\n";
+    printRaw<D, B, T>(raw);
 
     RawMatrix<D, B, T> diag2raw = mkRawMatrix(diag);
 
