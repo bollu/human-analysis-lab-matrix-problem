@@ -19,10 +19,10 @@ template<int D, int B, typename T>
 void printDiag(const DiagMatrix<D, B, T> &diag) {
     for(int i = 0; i < D*B; i++) {
         for(int j = 0; j < D*B; j++) {
-            const int iblock = i / B;
-            const int jblock = j / B;
-            const int iinner = i % B;
-            const int jinner = j % B;
+            const int iblock = i / D;
+            const int jblock = j / D;
+            const int iinner = i % D;
+            const int jinner = j % D;
 
             if(iinner == jinner) {
                 std::cout << std::right << std::setw(MAT_COLUMN_WIDTH) << diag.blocks[iblock][jblock][iinner];
@@ -224,7 +224,8 @@ void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
     std::cout<< "\n# DIAG:\n";
     printDiag(d1);
     std::cout<< "\n# RAW:\n";
-    printRaw<D, B, T>(mkRawMatrix<D, B, T>(d1));
+    auto diag_raw = mkRawMatrix<D, B, T>(d1);
+    printRaw<D, B, T>(diag_raw);
     std::cout << "\n===\n";
 
 

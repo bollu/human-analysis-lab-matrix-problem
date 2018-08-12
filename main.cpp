@@ -4,7 +4,7 @@ using FT = float;
 
 static const int NUM_MUL_CHECKS = 100;
 static const int NUM_INV_CHECKS = 100;
-static const int D = 2;
+static const int D = 1;
 static const int B = 3;
 static const float EPS = 0.1;
 
