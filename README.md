@@ -13,6 +13,7 @@ Provide proofs of complexity of algorithms.
 
 ## Thoughts as I solve this
 
+
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is
 fully parallel across all 3 loops, so we can permute the loops however we want,

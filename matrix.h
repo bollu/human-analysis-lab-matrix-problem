@@ -2,6 +2,7 @@
 #include <array>
 #include <complex>
 #include <assert.h>
+#define CML_IMPLEMENTATION
 #include "cml.h"
 // D = number of dimensions per diagonal
 // B = number of blocks
@@ -41,6 +42,19 @@ DiagMatrix<D, B, T> mulDiagMatrix(DiagMatrix<D, B, T> m1, DiagMatrix<D, B, T> m2
 
     return out;
 };
+
+template<int D, int B, typename T>
+DiagMatrix<D, B, T> mkIdentityDiag() {
+    DiagMatrix<D, B, T> out;
+    for(int b = 0; b < B; b++) {
+        for(int d = 0; d < D; d++) {
+            out[b][b][d] = 1;
+        }
+    }
+
+}
+
+
 
 template<int D, int B, typename T>
 DiagMatrix<D, B, T> invDiag(DiagMatrix<D, B, T> m1, DiagMatrix<D, B, T> d2);
@@ -94,7 +108,7 @@ MATRIX *mkCMLFromRaw(RawMatrix<D, B, T> r) {
 template<int D, int B, typename T>
 RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m) {
     RawMatrix<D, B, T> out;
-    MATRIX *cmlm = mkCMLFromRaw(m);
+    MATRIX *cmlm = mkCMLFromRaw<D, B, T>(m);
 
     MATRIX *cmlout = nullptr;
     bool success = cml_inverse(cmlm, cmlout);
@@ -155,7 +169,7 @@ DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZ
     return diag;
 }
 
-
+// TODO: remove code duplication?
 template<int D, int B, typename T>
 void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
     DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
@@ -167,3 +181,23 @@ void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
     assert(isEqual && "matrices not equal!");
 }
 
+// I have no idea if the inverse of these matrices continues to be a
+// diagonal matrix, so I'm going to run experiments and find out :)
+// Yay to knowing how to program
+template<int D, int B, typename T>
+RawMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m) {
+    RawMatrix<D, B, T> out;
+    return out;
+};
+
+
+template<int D, int B, typename T>
+void checkInverse(DiagMatrix<D, B, T> d, const T eps) {
+    // DiagMatrix<D, B, T> diag  = invDiagMatrix(d);
+    RawMatrix<D, B, T> diag_inverse  = invDiagMatrix(d);
+
+    RawMatrix<D, B, T> raw = invRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d));
+
+    const bool isEqual = isRawEqual<D, B, T>(raw, diag_inverse, eps, LogLevel::LogOn);
+    assert(isEqual && "matrices not equal!");
+}
