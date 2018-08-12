@@ -1,4 +1,4 @@
-# Matrix solutions to the "Human Analysis Lab" at Michigan State university.
+3 Matrix solutions to the "Human Analysis Lab" at Michigan State university.
 
 
 ## Question to be solved
@@ -13,6 +13,8 @@ Provide proofs of complexity of algorithms.
 
 ## Thoughts as I solve this
 
+- There is some annoying bug with block size ≠ diagonal size, will fix.
+
 
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is
@@ -21,8 +23,8 @@ using blocks is one particular permutation). So we can simply multiply across
 the blocks --- the blocks are diagonal, so we just need to multiply the diagonal
 elemens.
 
-This puts us at a time complexity of `O(B * B * D)` 
-where `B, B` are the block sizes, 
+This puts us at a time complexity of `O(B * B * B * D)` 
+where `B` is the number of blocks
 and `D` is the diagonal length. 
 
 This is clearly better than the naive solution with is `O((B * D) ^3)`

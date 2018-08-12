@@ -149,14 +149,14 @@ MATRIX *mkCMLFromRaw(RawMatrix<D, B, T> r) {
 }
 
 template<int D, int B, typename T>
-RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m) {
+RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m, bool &success) {
     RawMatrix<D, B, T> out;
     MATRIX *cmlm = mkCMLFromRaw<D, B, T>(m);
 
     MATRIX *cmlout = nullptr;
-    bool success = cml_inverse(cmlm, cmlout);
-    assert (success && "matrix inverse failed!");
-
+    success = cml_inverse(cmlm, cmlout);
+    
+    if (!success) return out;
     // I am almost 100% sure I can memcpy() between these two, but just
     // to be safe, I hesitate to do that -- memory layouts and whatnot.
     // Let's get this running first, optimise later.
@@ -221,17 +221,12 @@ DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZ
 // TODO: remove code duplication?
 template<int D, int B, typename T>
 void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
-    std::cout<< "\n# DIAG:\n";
-    printDiag(d1);
-    std::cout<< "\n# RAW:\n";
-    auto diag_raw = mkRawMatrix<D, B, T>(d1);
-    printRaw<D, B, T>(diag_raw);
-    std::cout << "\n===\n";
+    //  DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
+    DiagMatrix<D, B, T> diag  = d1;
 
-
-    DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
     RawMatrix<D, B, T> raw = mulRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d1), 
             mkRawMatrix<D, B, T>(d2));
+
     RawMatrix<D, B, T> diag2raw = mkRawMatrix(diag);
 
     const bool isEqual = isRawEqual<D, B, T>(raw, "raw", diag2raw, "diag", eps, LogLevel::LogOn);
@@ -249,11 +244,18 @@ RawMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m) {
 
 
 template<int D, int B, typename T>
-void checkInverse(DiagMatrix<D, B, T> d, const T eps) {
-    // DiagMatrix<D, B, T> diag  = invDiagMatrix(d);
+void checkInverse(DiagMatrix<D, B, T> d, const T eps, bool &success) {
+
+    RawMatrix<D, B, T> raw = invRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d), success);
+
+    if (!success) return;
+
+    // we don't check for success here, so let's first check for success in the case of
+    // raw
     RawMatrix<D, B, T> diag_inverse  = invDiagMatrix(d);
 
-    RawMatrix<D, B, T> raw = invRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d));
+
+    
 
     const bool isEqual = isRawEqual<D, B, T>(raw, "raw", diag_inverse, "diag", eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
