@@ -12,6 +12,27 @@ struct DiagMatrix {
     std::array<std::array<Diag, B>, B> blocks;
 };
 
+template<int D, int B, typename T>
+void printDiag(const DiagMatrix<D, B, T> &diag) {
+    for(int i = 0; i < D*B; i++) {
+        for(int j = 0; j < D*B; j++) {
+            const int iblock = i / B;
+            const int jblock = i / B;
+            const int iinner = i % B;
+            const int jinner = j % B;
+
+            if(iinner == jinner) {
+                std::cout << diag.blocks[iblock][jblock][iinner];
+            }
+            else {
+                std::cout << "0";
+            }
+            std::cout <<" ";
+        }
+        std::cout << "\n";
+    }
+}
+
 
 
 template<int D, int B, typename T> 
@@ -61,6 +82,17 @@ DiagMatrix<D, B, T> invDiag(DiagMatrix<D, B, T> m1, DiagMatrix<D, B, T> d2);
 
 template<int D, int B, typename T>
 using RawMatrix = std::array< std::array<T, D * B>, D * B>;
+
+
+template<int D, int B, typename T>
+void printRaw(const RawMatrix<D, B, T> &raw) {
+    for(int i = 0; i < D*B; i++) {
+        for(int j = 0; j < D*B; j++) {
+            std::cout << raw[i][j] << " ";
+        }
+        std::cout << "\n";
+    }
+}
 
 template<int D, int B, typename T>
 RawMatrix<D, B, T> mkRawMatrix(DiagMatrix<D, B, T> m) {
@@ -154,14 +186,14 @@ bool isRawEqual(RawMatrix<D, B, T> r1, RawMatrix<D, B, T> r2, const T eps, LogLe
 // NOTE: actually use a PRNG, don't (rand() % mod) / SIZE, this will bias
 // the results
 template<int D, int B, typename FloatT>
-DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZE = 2) {
+DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZE = 16) {
     DiagMatrix<D, B, FloatT> diag;
     for(int i = 0; i < B; i++) {
         for(int j = 0; j < B; j++) {
             for(int k = 0; k < B; k++) {
-                const int sign = rand() % 2 ? 1 : -1;
-                const int val = rand() % mod;
-                diag.blocks[i][j][k] = sign * val / SIZE;
+                const FloatT sign = rand() % 2 ? 1 : -1;
+                const FloatT val = rand() % mod;
+                diag.blocks[i][j][k] = (sign * val) / SIZE;
             }
         }
     }
