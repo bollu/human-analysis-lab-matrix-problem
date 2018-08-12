@@ -1,5 +1,6 @@
 #include <iostream>
 #include <array>
+#include <complex>
 #include <assert.h>
 // D = number of dimensions per diagonal
 // B = number of blocks
@@ -74,15 +75,29 @@ RawMatrix<D, B, T> mulRawMatrix(RawMatrix<D, B, T> m1, RawMatrix<D, B, T>m2) {
     return raw;
 }
 
+
+template<int D, int B, typename T>
+RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m1, RawMatrix<D, B, T>m2) {
+    RawMatrix<D, B, T> raw;
+    for(int i = 0; i < D * B; i++) {
+        for(int j = 0; j < D * B; j++) {
+            for(int k = 0; k < D * B; k++) {
+                raw[i][j] += m1[i][k] * m2[k][j];
+            }
+        }
+    }
+    return raw;
+}
+
 enum class LogLevel {
     LogOn = 1,
     LogOff = 0
 };
 template<int D, int B, typename T>
-bool isRawEqual(RawMatrix<D, B, T> r1, RawMatrix<D, B, T> r2, LogLevel l) {
+bool isRawEqual(RawMatrix<D, B, T> r1, RawMatrix<D, B, T> r2, const T eps, LogLevel l) {
     for(int i = 0; i < D * B; i++) {
         for(int j = 0; j < D * B; j++) {
-            if (r1[i][j] != r2[i][j]) {
+            if (std::abs(r1[i][j] - r2[i][j]) > eps) {
 
                 // we need to log
                 if (l == LogLevel::LogOn) {
@@ -99,16 +114,17 @@ bool isRawEqual(RawMatrix<D, B, T> r1, RawMatrix<D, B, T> r2, LogLevel l) {
     return true;
 }
 
-// NOTE: actually use a PRNG, don't rand() % mod
-template<int D, int B>
-DiagMatrix<D, B, int> genRandDiagIntMatrix(const int mod = 8) {
-    DiagMatrix<D, B, int> diag;
+// NOTE: actually use a PRNG, don't (rand() % mod) / SIZE, this will bias
+// the results
+template<int D, int B, typename FloatT>
+DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZE = 2) {
+    DiagMatrix<D, B, FloatT> diag;
     for(int i = 0; i < B; i++) {
         for(int j = 0; j < B; j++) {
             for(int k = 0; k < B; k++) {
                 const int sign = rand() % 2 ? 1 : -1;
                 const int val = rand() % mod;
-                diag.blocks[i][j][k] = sign * val;
+                diag.blocks[i][j][k] = sign * val / SIZE;
             }
         }
     }
@@ -118,15 +134,13 @@ DiagMatrix<D, B, int> genRandDiagIntMatrix(const int mod = 8) {
 
 
 template<int D, int B, typename T>
-void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2) {
+void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
     DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
     RawMatrix<D, B, T> raw = mulRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d1), 
             mkRawMatrix<D, B, T>(d2));
     RawMatrix<D, B, T> diag2raw = mkRawMatrix(diag);
 
-    const bool isEqual = isRawEqual<D, B, T>(raw, diag2raw, LogLevel::LogOn);
+    const bool isEqual = isRawEqual<D, B, T>(raw, diag2raw, eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
 }
-
-
 
