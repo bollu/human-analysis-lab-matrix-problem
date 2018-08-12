@@ -46,3 +46,7 @@ also make it nice to write the inverse. I believe not, because choosing
   This isn't even cheating since I worked some amount on polly ;)
 
 ## Benchmarks (TODO)
+
+## Thanks to:
+- [CML](https://github.com/MichaelJWelsh/cml), because I didn't trust my own
+  benchmark inverse implementation to be 100% correct.

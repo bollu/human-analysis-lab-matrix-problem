@@ -2,6 +2,7 @@
 #include <array>
 #include <complex>
 #include <assert.h>
+#include "cml.h"
 // D = number of dimensions per diagonal
 // B = number of blocks
 template<int D, int B, typename T>
@@ -76,17 +77,39 @@ RawMatrix<D, B, T> mulRawMatrix(RawMatrix<D, B, T> m1, RawMatrix<D, B, T>m2) {
 }
 
 
+// ouch, this cost is painful. Just switch to CML.
+// TODO: switch to unique_ptr<, custom_dtor>;
 template<int D, int B, typename T>
-RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m1, RawMatrix<D, B, T>m2) {
-    RawMatrix<D, B, T> raw;
+MATRIX *mkCMLFromRaw(RawMatrix<D, B, T> r) {
+    MATRIX *cml = cml_new(D * B, D*B);
     for(int i = 0; i < D * B; i++) {
         for(int j = 0; j < D * B; j++) {
-            for(int k = 0; k < D * B; k++) {
-                raw[i][j] += m1[i][k] * m2[k][j];
-            }
+            // TODO: look into cml_set_{row, col}
+            cml_set(cml, i, j, r[i][j]);
         }
     }
-    return raw;
+    return cml;
+}
+
+template<int D, int B, typename T>
+RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m) {
+    RawMatrix<D, B, T> out;
+    MATRIX *cmlm = mkCMLFromRaw(m);
+
+    MATRIX *cmlout = nullptr;
+    bool success = cml_inverse(cmlm, cmlout);
+    assert (success && "matrix inverse failed!");
+
+    // I am almost 100% sure I can memcpy() between these two, but just
+    // to be safe, I hesitate to do that -- memory layouts and whatnot.
+    // Let's get this running first, optimise later.
+    for(int i = 0; i < D * B; i++) {
+        for(int j = 0; j < D * B; j++) {
+            out[i][j] = cml_get(cmlout, i, j);
+        }
+    }
+
+    return out;
 }
 
 enum class LogLevel {
