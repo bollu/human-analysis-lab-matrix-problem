@@ -1,9 +1,12 @@
 #include <iostream>
+#include <iomanip>
 #include <array>
 #include <complex>
 #include <assert.h>
 #define CML_IMPLEMENTATION
 #include "cml.h"
+
+static const int MAT_COLUMN_WIDTH = 5;
 // D = number of dimensions per diagonal
 // B = number of blocks
 template<int D, int B, typename T>
@@ -17,15 +20,15 @@ void printDiag(const DiagMatrix<D, B, T> &diag) {
     for(int i = 0; i < D*B; i++) {
         for(int j = 0; j < D*B; j++) {
             const int iblock = i / B;
-            const int jblock = i / B;
+            const int jblock = j / B;
             const int iinner = i % B;
             const int jinner = j % B;
 
             if(iinner == jinner) {
-                std::cout << diag.blocks[iblock][jblock][iinner];
+                std::cout << std::right << std::setw(MAT_COLUMN_WIDTH) << diag.blocks[iblock][jblock][iinner];
             }
             else {
-                std::cout << "0";
+                std::cout << std::right << std::setw(MAT_COLUMN_WIDTH) << "0";
             }
             std::cout <<" ";
         }
@@ -88,20 +91,28 @@ template<int D, int B, typename T>
 void printRaw(const RawMatrix<D, B, T> &raw) {
     for(int i = 0; i < D*B; i++) {
         for(int j = 0; j < D*B; j++) {
-            std::cout << raw[i][j] << " ";
+            std::cout << std::right << std::setw(MAT_COLUMN_WIDTH) << raw[i][j] << " ";
         }
         std::cout << "\n";
     }
 }
+
+
 
 template<int D, int B, typename T>
 RawMatrix<D, B, T> mkRawMatrix(DiagMatrix<D, B, T> m) {
     RawMatrix<D, B, T> raw;
     for(int r = 0; r < B; r++) {
         for(int c = 0; c < B; c++) {
-            const typename DiagMatrix<D, B, T>::Diag diagelem = m.blocks[r][c];
-            for(int d = 0; d < D; d++) {
-                raw[B * r + d][B * c + d] = diagelem[d];
+            for(int ri = 0; ri < D; ri++) {
+                for(int ci = 0; ci < D; ci++) {
+                    if (ri == ci) {
+                        raw[r * D + ri][c * D + ci] = m.blocks[r][c][ri];
+                    }
+                    else {
+                        raw[r * D + ri][c * D + ci] = 0;
+                    }
+                }
             }
         }
     }
@@ -113,7 +124,7 @@ RawMatrix<D, B, T> mulRawMatrix(RawMatrix<D, B, T> m1, RawMatrix<D, B, T>m2) {
     RawMatrix<D, B, T> raw;
     for(int i = 0; i < D * B; i++) {
         for(int j = 0; j < D * B; j++) {
-                raw[i][j] = 0;
+            raw[i][j] = 0;
             for(int k = 0; k < D * B; k++) {
                 raw[i][j] += m1[i][k] * m2[k][j];
             }
@@ -163,7 +174,7 @@ enum class LogLevel {
     LogOff = 0
 };
 template<int D, int B, typename T>
-bool isRawEqual(RawMatrix<D, B, T> r1, RawMatrix<D, B, T> r2, const T eps, LogLevel l) {
+bool isRawEqual(RawMatrix<D, B, T> r1, std::string r1Name, RawMatrix<D, B, T> r2, std::string r2Name, const T eps, LogLevel l) {
     for(int i = 0; i < D * B; i++) {
         for(int j = 0; j < D * B; j++) {
             if (std::abs(r1[i][j] - r2[i][j]) > eps) {
@@ -171,8 +182,14 @@ bool isRawEqual(RawMatrix<D, B, T> r1, RawMatrix<D, B, T> r2, const T eps, LogLe
                 // we need to log
                 if (l == LogLevel::LogOn) {
                     std::cout << "matrices differ at: (" << i << "," << j <<")\n";
-                    std::cout << "r1[" << i << "][" << j << "] = " << r1[i][j] << "\n";
-                    std::cout << "r2[" << i << "][" << j << "] = " << r2[i][j] << "\n";
+                    std::cout << r1Name << "[" << i << "][" << j << "] = " << r1[i][j] << "\n";
+                    std::cout << r2Name << "[" << i << "][" << j << "] = " << r2[i][j] << "\n";
+
+                    std::cout<<r1Name << ":\n";
+                    printRaw<D, B, T>(r1);
+
+                    std::cout<<"\n"<<r2Name << ":\n";
+                    printRaw<D, B, T>(r2);
                 }
                 
 
@@ -186,7 +203,7 @@ bool isRawEqual(RawMatrix<D, B, T> r1, RawMatrix<D, B, T> r2, const T eps, LogLe
 // NOTE: actually use a PRNG, don't (rand() % mod) / SIZE, this will bias
 // the results
 template<int D, int B, typename FloatT>
-DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZE = 16) {
+DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZE = 1) {
     DiagMatrix<D, B, FloatT> diag;
     for(int i = 0; i < B; i++) {
         for(int j = 0; j < B; j++) {
@@ -204,12 +221,19 @@ DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZ
 // TODO: remove code duplication?
 template<int D, int B, typename T>
 void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
+    std::cout<< "\n# DIAG:\n";
+    printDiag(d1);
+    std::cout<< "\n# RAW:\n";
+    printRaw<D, B, T>(mkRawMatrix<D, B, T>(d1));
+    std::cout << "\n===\n";
+
+
     DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
     RawMatrix<D, B, T> raw = mulRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d1), 
             mkRawMatrix<D, B, T>(d2));
     RawMatrix<D, B, T> diag2raw = mkRawMatrix(diag);
 
-    const bool isEqual = isRawEqual<D, B, T>(raw, diag2raw, eps, LogLevel::LogOn);
+    const bool isEqual = isRawEqual<D, B, T>(raw, "raw", diag2raw, "diag", eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
 }
 
@@ -230,6 +254,6 @@ void checkInverse(DiagMatrix<D, B, T> d, const T eps) {
 
     RawMatrix<D, B, T> raw = invRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d));
 
-    const bool isEqual = isRawEqual<D, B, T>(raw, diag_inverse, eps, LogLevel::LogOn);
+    const bool isEqual = isRawEqual<D, B, T>(raw, "raw", diag_inverse, "diag", eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
 }
