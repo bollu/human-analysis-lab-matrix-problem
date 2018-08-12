@@ -17,9 +17,14 @@ Provide proofs of complexity of algorithms.
 Matmul is not so hard, since we can perform matmul across blocks (matmul is
 fully parallel across all 3 loops, so we can permute the loops however we want,
 using blocks is one particular permutation). So we can simply multiply across
-the blocks -- and the blocks are diagonal. This puts us at a performance cost
-of `O(B * B * D)` where `B, B` are the block sizes, and `D` is the diagonal
-length. This is clearly better than the naive solution with is `O((B * D) ^3)`
+the blocks --- the blocks are diagonal, so we just need to multiply the diagonal
+elemens.
+
+This puts us at a time complexity of `O(B * B * D)` 
+where `B, B` are the block sizes, 
+and `D` is the diagonal length. 
+
+This is clearly better than the naive solution with is `O((B * D) ^3)`
 
 ### Inverse
 I'm sure literature on this thing exists, but I'm not going to lookup literature
