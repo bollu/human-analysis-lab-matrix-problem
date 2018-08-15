@@ -79,7 +79,60 @@ INVERSE:
 ```
 
 To make sure I wasn't going crazy, I wrote a little test that actually multiplies
-the original and its supposed inverse, and it actually works out to the identity matrix
+the original and its supposed inverse, and it actually works out to the identity matrix.
+
+- Hey, this makes sense! consider a system like this:
+
+```
+| x y | z w
++ ----+---
+| 1 0 | 3 0
+| 0 2 | 0 4
++ ----+----
+| 2 0 | 9 0
+| 0 4 | 0 3
+```
+
+Now, if we write down the linear equations that this matrix represents, what
+we're getting is like,
+```
+x + 3z
+2x + 9z
+--
+2y + 4w
+4y + 3w
+```
+
+So, we can look at this as trying to invert two *smaller* set of *independent*
+matrices:
+
+```
+| x z 
++ ----
+| 1 3
+| 2 9 
+```
+
+```
+| y w
++ ----
+| 2 4
+| 4 3 
+```
+
+Or at least, that's the theory at this point.
+I'm going to implement this as follows:
+    - 1. Use the `cml_inverse` to find the inverse of the "chunks", so I reduce
+          the problem by one level of difficulty: first I check that my hypothesis
+          is correct (we can invert the independent system of equations).
+    - 2. Now that our hypothesis is tested and works out, implement the gauss jordan
+         pivot-then-row-reduce scheme that we are all familiar with!
+
+Note that this explanation also sanity checks, because when `D = 1`, what we 
+conclude is that we need to pick each equation from each row, which reduces
+to "regular" matmul. nice!
+
+
 
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is
