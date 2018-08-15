@@ -1,5 +1,6 @@
 #define _GLIBCXX_DEBUG
 #include <iostream>
+#include <numeric>
 #include <iomanip>
 #include <array>
 #include <complex>
@@ -49,10 +50,19 @@ typename DiagMatrix<D, B, T>::Diag mkZeroDiag() {
     for(int i = 0; i < D; i++) { out[i] = 0; }
     return out;
 }
+constexpr int gcd(int A, int B) {
+    if (A == 0) return B;
+    return gcd(B % A, A);
+}
+
+constexpr int lcm(int A, int B) {
+    return A * B / gcd(A, B);
+}
 
 // hm, this is interesting.
 template<int D1, int B1, int D2, int B2, int X1, int X2, typename T>
-DiagMatrix<X1, X2, T> mulDiagMatrixGeneral(DiagMatrix<D1, B1, T> m1, DiagMatrix<D2, B2, T> m2) {
+DiagMatrix<B1*B2/lcm(D1, D2), lcm(D1, D2), T> 
+        mulDiagMatrixGeneral(DiagMatrix<D1, B1, T> m1, DiagMatrix<D2, B2, T> m2) {
 
 };
 
@@ -370,7 +380,6 @@ RawMatrix<N, T> invRawMatrixOurs(RawMatrix<N, T> m, bool &success) {
 
         // 2. SCALE PIVOT TO BE 1
         {
-            static const float EPS = 1e-2;
             const T pivot = m[dsrc][dsrc];
             assert(pivot != 0 && "pivot is 0!");
             scaleRow<N, T>(m, (T)(1.0 / pivot), dsrc);

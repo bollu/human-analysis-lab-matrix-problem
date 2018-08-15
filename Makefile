@@ -2,10 +2,10 @@
 # I build LLVM from source for Polly, I need to pull in ASAN or change $PATH.
 # I do this tomorrow.
 # SANITIZERS="-fsanitize=address"
-SANITIZERS=""
+CPP=g++
 
 mat.out: main.cpp matrix.h cml.h
-	clang main.cpp  -o mat.out -lstdc++ -std=c++17 -Wall  $(SANITIZERS) -lblas -llapack -g 
+	$(CPP) main.cpp  -o mat.out -lstdc++ -std=c++17 -Wall  -lblas -llapack -g  
 
 test: mat.out
 	./mat.out --multest --invtest

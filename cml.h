@@ -1094,8 +1094,6 @@ CML_API bool cml_inverse(MATRIX *m, MATRIX *opt) {
     double work[lwork];
     int info;
 
-    double rcond;
-
     dgetrf_(&n, &n, m->data, &n, ipiv, &info);
 
     if (info < 0) {
