@@ -8,20 +8,6 @@ static const int D = 2;
 static const int B = 3;
 static const float EPS = 0.1;
 
-void printSampleInverses() {
-
-    for(int i = 0; i < NUM_INV_CHECKS;) {
-        DiagMatrix<D, B, FT> m = genRandDiagFloatMatrix<D, B, FT>();
-
-        bool success;
-        checkInverse(m, EPS, success);
-        if (!success) { continue; }
-        std::cout << "running inverse check (" << i << ")...";
-        std::cout << "success\n";
-        i++;
-    }
-}
-
 
 int main() {
     srand(time(NULL));
@@ -35,6 +21,24 @@ int main() {
 
     }
 
+
+    for(int i = 0; i < NUM_INV_CHECKS;) {
+        DiagMatrix<D, B, FT> m = genRandDiagFloatMatrix<D, B, FT>();
+        std::cout << "running matmul check (" << i << ")...";
+        CheckInverseResult cir = checkInverse(m, EPS);
+
+        if (cir == CIRSuccess) {
+            std::cout << "success!\n";
+            i++;
+        }
+        else if (cir == CIRFail) {
+            std::cout << "failed";
+        }
+        else {
+            std::cout << "non-invertible, retrying\n";
+        }
+
+    }
     // std::cout << "MATMUL SUCCEEDS\n";
     // printSampleInverses();
     // std::cout << "INVERSE SUCCEEDS\n";

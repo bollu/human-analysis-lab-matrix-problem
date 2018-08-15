@@ -252,20 +252,27 @@ RawMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m) {
 };
 
 
+enum CheckInverseResult {
+    CIRSuccess,
+    CIRFail,
+    CIRNonInvertible
+};
+
 template<int D, int B, typename T>
-void checkInverse(DiagMatrix<D, B, T> d, const T eps, bool &success) {
+CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
 
+    bool success = false;
     RawMatrix<D, B, T> raw = invRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d), success);
-
-    if (!success) return;
+    if (!success) return CIRNonInvertible;
 
     // we don't check for success here, so let's first check for success in the case of
     // raw
     RawMatrix<D, B, T> diag_inverse  = invDiagMatrix(d);
 
 
-    
-
     const bool isEqual = isRawEqual<D, B, T>(raw, "raw", diag_inverse, "diag", eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
+
+    if (isEqual) return CIRSuccess;
+    return CIRFail;
 }
