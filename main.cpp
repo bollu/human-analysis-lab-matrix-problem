@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
     bool multest = false;
     bool invtest = false;
     bool invtestrawmanual = false;
+    bool mulexperimentdifferentsize = false;
 
     cxxopts::Options options(argv[0], 
             " - Command line options for the matrix tool");
@@ -115,13 +116,17 @@ int main(int argc, char *argv[]) {
         ("multest", "run matmul tests", cxxopts::value<bool>(multest))
     ("invtest", "run matinv tests", cxxopts::value<bool>(invtest))
     ("invtestrawmanual", "check correctness of matinv for matraw from user input", cxxopts::value<bool>(invtestrawmanual))
+    ("mulexperimentdifferentsize", 
+     "check correctness of matinv for matraw from user input", 
+     cxxopts::value<bool>(mulexperimentdifferentsize))
     ("help", "show help");
 
     srand(time(NULL));
 
 
     auto result = options.parse(argc, argv);
-    if (result.count("help") || (!multest && !invtest && !invtestrawmanual))
+    if (result.count("help") || 
+            (!multest && !invtest && !invtestrawmanual && !mulexperimentdifferentsize))
     {
       std::cout << options.help({""}) << std::endl;
       exit(0);
@@ -191,6 +196,27 @@ int main(int argc, char *argv[]) {
 
         }
     }
+
+    // Flag added to see what the output of multiplying matrices of the form
+    // (B1, D1) * (B2, D2) is.
+    /*
+    if (mulexperimentdifferentsize) {
+            DiagMatrix<6, 2, FT> m1 = genRandDiagFloatMatrix<6, 2, FT>();
+            DiagMatrix<4, 4, FT> m2 = genRandDiagFloatMatrix<4, 4, FT>();
+
+            RawMatrix<12, 1, FT> m3 = 
+                mulRawMatrix<4, 4, FT>(
+                        mkRawMatrix<6, 2, FT>(m1),
+                        mkRawMatrix<4, 4, FT>(m2));
+
+            std::cout << "m1:\n";
+            printDiag(m1);
+            std::cout << "\nm2:\n";
+            printDiag(m2);
+            std::cout << "m1 * m2 := \n";
+            printRaw<12, 1, FT>(m3);
+    }
+    */
 
     // runInverseDiagTest();
     // std::cout << "MATMUL SUCCEEDS\n";

@@ -151,6 +151,19 @@ of freedom (in fact, it's quite confusing).
 printing in some places, create operator overloads for `*`, `<<` and create a
 benchmarking rig using google's bench library.
 
+- OK, finished with inverse. I thought I was wrong, when I actually wasn't --
+It was the fact that the CML library screws up on non-invertible matrices.
+So, now I check that the output of CML is actually correct by computing the matmul
+of A * inv(A) ~= Identity
+
+- Next step, generalizing matmul to different block and diagonal sizes. Since
+our matrices are square, it is safe to assume that they are square matrices of
+the form `(B1, D1)`, `(B2, D2)`, with the condition that
+`B1 * D1 = B2 * D2` (since inner dimensions must be equal).
+Intuition suggests that the resultant should be of the form `(B1 * D1 / LCM (D1, D2), LCM(D1, D2))`.
+I'm going to add  a flag to take matrices and see what the resultants are.
+Flag is called `mulexperimentdifferentsize`.
+
 
 
 ### Matmul

@@ -77,6 +77,34 @@ DiagMatrix<D, B, T> mulDiagMatrixSameSize(DiagMatrix<D, B, T> m1, DiagMatrix<D, 
     return out;
 };
 
+
+// B1 * D1 = B2 * D2
+// What is the new (B, D) ?
+// I believe it's going to be LCM.
+// B1 / LCM(D1, D2) , LCM(D1, D2)
+/*
+template<int D1, int B1, int D2, int B2, typename T>
+DiagMatrix<D, B, T> mulDiagMatrixDifferentSize(DiagMatrix<D, B, T> m1, DiagMatrix<D, B, T> m2) {
+    DiagMatrix<D, B, T> out;
+    // we can perform block wise multiplication
+    for(int i = 0; i < B; i++) {
+        for(int j = 0; j < B; j++)  {
+            // TODO: move this out into the constructor.
+            out.blocks[i][j] = mkZeroDiag<D, B, T>();
+            for(int k = 0; k < B; k++) {
+                // multiply the diagonal element
+                for(int d = 0; d < D; d++) {
+                    out.blocks[i][j][d] += m1.blocks[i][k][d] * m2.blocks[k][j][d];
+                }
+            }
+        }
+
+    }
+
+    return out;
+};
+*/
+
 template<int D, int B, typename T>
 DiagMatrix<D, B, T> mkIdentityDiag() {
     DiagMatrix<D, B, T> out;
