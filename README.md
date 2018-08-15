@@ -143,6 +143,10 @@ which is lower than the naive `O((D * B)^3) = O(D^3 * B^3)`
 to `RawMatrix<N, T>`. It makes no sense for `RawMatrix` to have two degrees
 of freedom (in fact, it's quite confusing).
 
+- OK, I now have a test cradle for my matrix inversion - one called
+`invRawMatrixCML` which will be the reference implementation, and one call
+`invRawMatrixOurs` which will be the implementation I create using gauss-jordan.
+
 
 
 ### Matmul
