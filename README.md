@@ -47,6 +47,40 @@ Plus, these matrices maybe sparse, and inverses of sparse matrices
 need not be sparse (I do not remember how I know this fact, but I googled
 and [found the math.se answer again (link)](https://math.stackexchange.com/questions/471136/inverse-of-sparse-matrix-is-not-generally-sparse).
 
+- Hm, this is nice and unexpected -- the inverse matrices are also in blocks!
+cool, now let's try to understand why. Here is a sample matrix and its inverse:
+```
+MATRIX:
+      5       0       0       0      -5       0       0       0      -0       0       0       0 
+      0      -4       0       0       0      -6       0       0       0       0       0       0 
+      0       0      -2       0       0       0      -0       0       0       0      -4       0 
+      0       0       0      -5       0       0       0       6       0       0       0      -3 
+      5       0       0       0      -6       0       0       0       0       0       0       0 
+      0       4       0       0       0       7       0       0       0       7       0       0 
+      0       0       7       0       0       0       1       0       0       0      -1       0 
+      0       0       0      -3       0       0       0      -5       0       0       0       2 
+      6       0       0       0       6       0       0       0      -7       0       0       0 
+      0       6       0       0       0      -4       0       0       0      -3       0       0 
+      0       0      -1       0       0       0       4       0       0       0      -5       0 
+      0       0       0       4       0       0       0       1       0       0       0       7 
+INVERSE:
+1.2     0       0       0       -1      0       0       0       0       0       0       -0      
+0       -0.0199 0       0       0       0.0511  0       0       0       0.119   0       -0      
+0       0       0.00877 0       0       0       0.14    0       0       0       -0.0351 -0      
+0       0       0       -0.12   0       0       0       -0.146  0       0       0       -0.00974 
+1       0       0       0       -1      0       0       0       0       0       0       -0      
+0       -0.153  0       0       0       -0.0341 0       0       0       -0.0795 0       -0      
+0       0       -0.316  0       0       0       -0.0526 0       0       0       0.263   -0      
+0       -0      0       0.0942  0       0       0       -0.0747 0       0       0       0.0617  
+1.89    0       0       0       -1.71   0       0       0       -0.143  0       0       -0      
+0       0.165   0       0       0       0.148   0       0       0       0.0114  0       -0      
+0       0       -0.254  0       0       0       -0.0702 0       0       0       0.0175  -0      
+0       0       0       0.0552  0       0       0       0.0942  0       0       0       0.14    
+```
+
+To make sure I wasn't going crazy, I wrote a little test that actually multiplies
+the original and its supposed inverse, and it actually works out to the identity matrix
+
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is
         fully parallel across all 3 loops, so we can permute the loops however we want,

@@ -4,7 +4,7 @@ using FT = float;
 
 static const int NUM_MUL_CHECKS = 100;
 static const int NUM_INV_CHECKS = 100;
-static const int D = 2;
+static const int D = 4;
 static const int B = 3;
 static const float EPS = 0.1;
 
@@ -47,6 +47,10 @@ void sanityCheckInverse(RawMatrix<D, B, FT> m1, RawMatrix<D, B, FT> m2, float ep
             }
         }
     }
+
+    std::cout << "\nsanity check close-to-identity mat:\n";
+    printRaw<D, B, T>(mul);
+    std::cout << "\n";
 
 }
 
