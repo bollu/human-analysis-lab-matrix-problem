@@ -41,6 +41,7 @@ extern "C" {
 #endif
 
 
+#include <stdio.h>
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -1067,6 +1068,7 @@ CML_API void cml_normalize(MATRIX *m, MATRIX *opt) {
  */
 CML_API bool cml_inverse(MATRIX *m, MATRIX *opt) {
     if (m == NULL || m == opt || m->rows != m->cols || m->rows == 0) {
+        printf("cml_error: %d\n", __LINE__);
         errno = EINVAL;
         return false;
     }
@@ -1081,6 +1083,7 @@ CML_API bool cml_inverse(MATRIX *m, MATRIX *opt) {
     } 
 
     if (errno) {
+        printf("cml_error: %d\n", __LINE__);
         cml_free(backup);
         return false;
     } else {
@@ -1098,15 +1101,18 @@ CML_API bool cml_inverse(MATRIX *m, MATRIX *opt) {
     if (info < 0) {
         cml_cpy(m, backup);
         cml_free(backup);
+        printf("cml_error: %d\n", __LINE__);
         errno = EDOM;
         return false;
     } else if (info > 0) {
         cml_cpy(m, backup);
         cml_free(backup);
+        printf("cml_error: %d\n", __LINE__);
         return false;
     }
 
     cml_free(backup);
+
 
     return true;
 }

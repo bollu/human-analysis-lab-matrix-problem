@@ -7,7 +7,7 @@
 #define CML_IMPLEMENTATION
 #include "cml.h"
 
-static const int MAT_COLUMN_WIDTH = 5;
+static const int MAT_COLUMN_WIDTH = 7;
 // D = number of dimensions per diagonal
 // B = number of blocks
 template<int D, int B, typename T>
@@ -97,7 +97,7 @@ template<int D, int B, typename T>
 void printRaw(const RawMatrix<D, B, T> &raw) {
     for(int i = 0; i < D*B; i++) {
         for(int j = 0; j < D*B; j++) {
-            std::cout << std::right << std::setw(MAT_COLUMN_WIDTH) << raw[i][j] << " ";
+            std::cout << std::setprecision(3) <<  std::left << std::setw(MAT_COLUMN_WIDTH) << raw[i][j] << " ";
         }
         std::cout << "\n";
     }
@@ -160,16 +160,16 @@ RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m, bool &success) {
     RawMatrix<D, B, T> out;
     MATRIX *cmlm = mkCMLFromRaw<D, B, T>(m);
 
-    MATRIX *cmlout = nullptr;
-    success = cml_inverse(cmlm, cmlout);
-    
+    assert(cmlm != nullptr);
+    success = cml_inverse(cmlm, NULL);
     if (!success) return out;
+
     // I am almost 100% sure I can memcpy() between these two, but just
     // to be safe, I hesitate to do that -- memory layouts and whatnot.
     // Let's get this running first, optimise later.
     for(int i = 0; i < D * B; i++) {
         for(int j = 0; j < D * B; j++) {
-            out[i][j] = cml_get(cmlout, i, j);
+            out[i][j] = cml_get(cmlm, i, j);
         }
     }
 

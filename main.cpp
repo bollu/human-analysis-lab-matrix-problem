@@ -28,25 +28,51 @@ void runInverseTest() {
     }
 }
 
+// sanity check that the two matrices are inverses of each other
+// by multiplying them and checking that the result is almost-identity.
+template<int D, int B, typename T>
+void sanityCheckInverse(RawMatrix<D, B, FT> m1, RawMatrix<D, B, FT> m2, float eps) {
+    RawMatrix<D, B, FT> mul = mulRawMatrix<D, B, T>(m1, m2);
+
+    for(int i = 0; i < D * B; i++) {
+        for(int j = 0; j < D * B; j++) {
+            const T val = mul[i][j];
+            if (i == j) {
+                // id[i][j] = 1
+                assert(std::abs(1 - val) < eps);
+            }
+            else {
+                // id[i][j] = 1
+                assert(std::abs(val) < eps);
+            }
+        }
+    }
+
+}
+
 void displayInverses() {
     while(1) {
-        DiagMatrix<D, B, FT> m = genRandDiagFloatMatrix<D, B, FT>();
+        DiagMatrix<D, B, FT> d = genRandDiagFloatMatrix<D, B, FT>();
+        RawMatrix<D, B, FT> raw = mkRawMatrix<D, B, FT>(d);
         bool success;
-        RawMatrix<D, B, FT> raw = invRawMatrix<D, B, FT>(mkRawMatrix<D, B, FT>(m), success);
+        RawMatrix<D, B, FT> inv = invRawMatrix<D, B, FT>(raw, success);
+
         if (!success) continue;
+
+        sanityCheckInverse<D, B, FT>(raw, inv, EPS);
 
         std::cout << "====\n";
         std::cout << "MATRIX:\n";
-        printDiag(m);
+        printDiag(d);
         std::cout << "INVERSE:\n";
-        printRaw<D, B, FT>(raw);
+        printRaw<D, B, FT>(inv);
         std::cout << "\n";
 
         char c;
         std::cout << "continue? [y/N]->";
         std::cin >> c;
         if (c == 'y') { continue; }
-        break;
+        return;
     }
 
 }
