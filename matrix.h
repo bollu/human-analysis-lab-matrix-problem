@@ -18,7 +18,6 @@ struct DiagMatrix {
 
 template<int D, int B, typename T>
 void printDiag(const DiagMatrix<D, B, T> &diag) {
-    return;
     for(int i = 0; i < D*B; i++) {
         for(int j = 0; j < D*B; j++) {
             const int iblock = i / D;
@@ -96,7 +95,6 @@ using RawMatrix = std::array< std::array<T, D * B>, D * B>;
 
 template<int D, int B, typename T>
 void printRaw(const RawMatrix<D, B, T> &raw) {
-    return;
     for(int i = 0; i < D*B; i++) {
         for(int j = 0; j < D*B; j++) {
             std::cout << std::right << std::setw(MAT_COLUMN_WIDTH) << raw[i][j] << " ";
