@@ -3,10 +3,10 @@
 
 using FT = float;
 
-static const int NUM_MUL_CHECKS = 1000;
-static const int NUM_INV_CHECKS = 1000;
-static const int D = 1;
-static const int B = 3;
+static const int NUM_MUL_CHECKS = 100;
+static const int NUM_INV_CHECKS = 1e5;
+static const int D = 2;
+static const int B = 4;
 static const float EPS = 0.1;
 
 // sanity check that the two matrices are inverses of each other
@@ -28,11 +28,6 @@ void checkInverseByMatmul(RawMatrix<D, B, FT> m1, RawMatrix<D, B, FT> m2, float 
             }
         }
     }
-
-    std::cout << "\nsanity check close-to-identity mat:\n";
-    printRaw<D, B, T>(mul);
-    std::cout << "\n";
-
 }
 
 
@@ -92,9 +87,9 @@ void displayInverses() {
 // Check that our implementation of inverseRaw works
 void runInverseRawTest() {
     std::cout << "checking correctness of matrix inverse of rawMat\n";
-    RawMatrix<D, B, FT> m = genRandRawFloatMatrix<D, B, FT>();
 
     for(int i = 0; i < NUM_INV_CHECKS; i++) {
+        RawMatrix<D, B, FT> m = genRandRawFloatMatrix<D, B, FT>();
         bool success;
         RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, success);
         if (!success) continue;

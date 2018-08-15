@@ -7,7 +7,7 @@
 #define CML_IMPLEMENTATION
 #include "cml.h"
 
-#define DEBUG 1
+#define DEBUG 
 
 static const int MAT_COLUMN_WIDTH = 7;
 // D = number of dimensions per diagonal
@@ -282,47 +282,61 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
 #endif
 
 
-    // (row, col) representation.
     // pivoting - look at blocks on the diagonal
     // We are pivoting *rows* around.
-    for(int c = 0; c < D * B; c++) {
-        if (m[c][c] != 0) continue;
-        int biggest_row = c;
+    // For each element on the diagonal, check if it's a 0.
+    // If it this, then find a suitable row to pivot with.
+    for(int d = 0; d < D * B; d++) {
+        if (m[d][d] != 0) continue;
 
-        // if we have a pivot element, continue
+#ifdef DEBUG
+        std::cout << "need to pivot for diagonal: " << d << "\n";
+#endif
 
-        // we don't have a pivot element on this column, so look for the
-        // row that has the largest element on *this column*.
-        // Not all rows of the matrix are useful, only rows of other
-        // blocks that have the same "d" will be active.
-        for(int curr = 0; curr < B * D; curr++) {
-            // In the rth block in the current(b)th collumn, look at the dth element.
-            if (std::abs(m[curr][c]) > std::abs(m[biggest_row][c])) {
-                biggest_row = curr;
+        // We do need to pivot...
+        int biggest_row = d;
+
+        // Look for a row to pivot with
+        for(int rcur = 0; rcur < B * D; rcur++) {
+            // In the rth block in the rcurent(b)th collumn, look at the dth element.
+            if (std::abs(m[rcur][d]) > std::abs(m[biggest_row][d])) {
+                biggest_row = rcur;
             }
         }
+
+#ifdef DEBUG
+        std::cout << "swapping (" << d <<") with row(" << biggest_row << ")";
+#endif
 
         // we now looked for the biggest row. If it is *equal* to the current
         // row, then we have all 0's on this dimension of the space,
         // so we're screwed, since this dimension is being sent into the null space.
         // Give up.
-        if (biggest_row == c) {
+        if (biggest_row == d) {
             success = false;
             return out;
         }
 
         // We have a row to pivot
-        swapRowsMutRawMat<D, B, T>(m, biggest_row, c);
-        swapRowsMutRawMat<D, B, T>(out, biggest_row, c);
+        swapRowsMutRawMat<D, B, T>(m, biggest_row, d);
+        swapRowsMutRawMat<D, B, T>(out, biggest_row, d);
 
-    }
+#ifdef DEBUG
+        std::cout << "===\n";
+        std::cout << __LINE__ << ":PIVOTED(" << d <<") MATRIX:\n";
+        printRaw<D, B, T>(m);
+        std::cout << __LINE__ << ":PIVOTED(" << d <<") OUT:\n";
+        printRaw<D, B, T>(out);
+        std::cout << "===\n";
+#endif
+    } // end pivot loop
 
 
 #ifdef DEBUG
     std::cout << "===\n";
-    std::cout << __LINE__ << ":PIVOTED MATRIX:\n";
+    std::cout << __LINE__ << ":FINAL PIVOTED MATRIX:\n";
     printRaw<D, B, T>(m);
-    std::cout << __LINE__ << ":PIVOTED OUT:\n";
+    std::cout << __LINE__ << ":FINAL PIVOTED OUT:\n";
     printRaw<D, B, T>(out);
     std::cout << "===\n";
 #endif
