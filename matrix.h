@@ -7,6 +7,8 @@
 #define CML_IMPLEMENTATION
 #include "cml.h"
 
+#define DEBUG 1
+
 static const int MAT_COLUMN_WIDTH = 7;
 // D = number of dimensions per diagonal
 // B = number of blocks
@@ -219,6 +221,8 @@ RawMatrix<D, B, T> mkRawIdentity() {
 // mut = mutate
 template<int D, int B, typename T>
 void swapRowsMutRawMat(RawMatrix<D, B, T> &m, int r1, int r2) {
+    assert(r1 >= 0 && r1 <= B * D && "row out of bounds");
+    assert(r2 >= 0 && r2 <= B * D && "row out of bounds");
     T temp;
     for(int c = 0; c < B * D; c++) {
         temp = m[r1][c];
@@ -226,6 +230,16 @@ void swapRowsMutRawMat(RawMatrix<D, B, T> &m, int r1, int r2) {
         m[r2][c] = temp;
     }
 }
+
+// AxmyRow = "Ax - y" a row (a play on "axpy") 
+// Perform the row operation: Rtarget <- Rtarget - scale * Rsrc
+template<int D, int B, typename T>
+void AxmyColumn(RawMatrix<D, B, T> &m, T scale, int csrc, int ctarget) {
+    for(int r = 0; r < B * D; r++) {
+        m[r][ctarget] -= scale * m[r][csrc];
+    }
+}
+
 
             
 // Perform matrix implementation using naive gauss jordan.
@@ -275,20 +289,84 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
         assert(m[i][i] != 0 && "pivoted matrix has zeroes on diagonal!");
     }
 
+#ifdef DEBUG
+    std::cout << "===\n";
     std::cout << __LINE__ << ":PIVOTED MATRIX:\n";
     printRaw<D, B, T>(m);
     std::cout << __LINE__ << ":\nPIVOTED OUT:\n";
     printRaw<D, B, T>(out);
-    std::cout << "\n";
+    std::cout << "===\n";
+#endif
     
-    
-
-    for(int c = 0; c < B * D; c++) {
-        for(int r = 0; r < B * D; r++) {
-            // scale everything down by the identity number
+    // scale everything down by the pivot so we get a 1 on the pivot
+    // row
+    for(int r = 0; r < B * D; r++) {
+        const T scale = m[r][r];
+        for(int c = 0; c < B * D; c++) {
+            m[r][c] = m[r][c] / scale;
+            out[r][c] = out[r][c] / scale;
         }
     }
 
+#ifdef DEBUG
+    std::cout << "===\n";
+    std::cout << __LINE__ << ":SCALED MATRIX:\n";
+    printRaw<D, B, T>(m);
+    std::cout << __LINE__ << ":SCALED OUT:\n";
+    printRaw<D, B, T>(out);
+    std::cout << "===\n";
+#endif
+
+
+    // With each row, kill every column other than the current diagonal column
+    // with the 1st row, kill all coeffs other than that of the first column *in the first row*
+    // with the 2nd row, kill all coeffs other than that of the 2nd column *in the second row*
+    // Src = doing the killing (the pivot we use to kill)
+    // Column = going to be killed (the columns we make 0 at the source row)
+    for(int rsrc = 0; rsrc < B * D; rsrc++) {
+        static const float EPS = 1e-3;
+        const T pivot = m[rsrc][rsrc];
+        assert(std::abs(pivot - 1) < EPS && "pivot is not normalized!");
+
+        for(int ctarget = 0; ctarget < B * D; ctarget++) {
+            if (rsrc == ctarget) continue;
+
+            const T scale = m[rsrc][ctarget];
+
+            // 1   0    0    0 ..
+            // a1  CUR(1)  a2   a3 ..
+            // b1  b2   b3(1)   b4
+            // c1  c2   c3   c4(1)
+            //void AxmyColumn(RawMatrix<D, B, T> &m, T scale, int csrc, int ctarget)
+            AxmyColumn<D, B, T>(m, scale, rsrc, ctarget);
+            AxmyColumn<D, B, T>(out, scale, rsrc, ctarget);
+        }
+
+        // check that the row now looks like
+        // ...
+        // 0 0 0 CUR(1) 0 0 0 ...
+        // ...
+        for(int c = 0; c < B * D; c++) {
+            if (c == rsrc) {
+                assert(std::abs(m[rsrc][c] - 1) < EPS);
+            }
+            else {
+                assert(std::abs(m[rsrc][c]) < EPS);
+            }
+        }
+    }
+
+
+#ifdef DEBUG
+    std::cout << "===\n";
+    std::cout << __LINE__ << ":FINAL MATRIX:\n";
+    printRaw<D, B, T>(m);
+    std::cout << __LINE__ << ":FINAL OUT:\n";
+    printRaw<D, B, T>(out);
+    std::cout << "===\n";
+#endif
+
+    success = true;
     return out;
 }
 
