@@ -21,11 +21,16 @@ Provide proofs of complexity of algorithms.
   take a block of size `DxD`, which needs to be picked up correctly from the
    other matrices. Too sleepy right now.
 
+
 - I'll probably do this for now: add a method called `ix(i, j)` which allows
 for "real" indeces to be passed, from which we then figure out how to index
 into the matrix. This is inefficient, so I assume you could provide a template
 instance for `matmul<D, D, T>` which is specialized for the case when `D = B`.
 This can be used to implement a "naive" inverse, but this is obviously bad.
+
+- No no, the chunking works, I was just trashing memory like a bad C++ programmer.
+  Use the `GLIBCXX` debug check to figure out what was screwing up, and now
+  matmul works :) Next step, implement matrix inverse using gaussian elimination.
 
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is
