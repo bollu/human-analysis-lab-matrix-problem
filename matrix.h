@@ -222,8 +222,7 @@ DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZ
 // TODO: remove code duplication?
 template<int D, int B, typename T>
 void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
-    //  DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
-    DiagMatrix<D, B, T> diag  = d1;
+    DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
     std::cout<<"\nMULDIAG:\n";
     printDiag<D, B, T>(d1);
     std::cout<<"\n====\n";
