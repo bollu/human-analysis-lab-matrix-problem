@@ -5,9 +5,9 @@ using FT = float;
 
 static const int NUM_MUL_CHECKS = 100;
 static const int NUM_INV_CHECKS = 1e5;
-static const int D = 2;
-static const int B = 4;
-static const float EPS = 0.1;
+static const int D = 1;
+static const int B = 2;
+static const float EPS = 0.2;
 
 // sanity check that the two matrices are inverses of each other
 // by multiplying them and checking that the result is almost-identity.
@@ -90,12 +90,22 @@ void runInverseRawTest() {
 
     for(int i = 0; i < NUM_INV_CHECKS; i++) {
         RawMatrix<D, B, FT> m = genRandRawFloatMatrix<D, B, FT>();
+
         bool success;
         RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, success);
         if (!success) continue;
 
+
+        // sanity check that the m * inv == identity
+        checkInverseByMatmul<D, B, FT>(m, refinv, EPS);
+
         RawMatrix<D, B, FT> inv = invRawMatrixOurs<D, B, FT>(m, success);
-        assert(success == true && "a matrix inversion that succeeded with CML did not succeed with ours");
+        if (success != true) {
+            std::cout << "CML inverse:\n";
+            printRaw<D, B, FT>(refinv);
+            std::cout << "\n";
+            assert(success == true && "a matrix inversion that succeeded with CML did not succeed with ours");
+        }
 
 
         const bool isEqual = isRawEqual<D, B, FT>(refinv,

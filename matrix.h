@@ -144,7 +144,7 @@ RawMatrix<D, B, T> mkRawMatrix(DiagMatrix<D, B, T> m) {
                 raw[i][j] = m.blocks[iblock][jblock][iinner];
             }
             else {
-               raw[i][j] = 0;
+                raw[i][j] = 0;
             }
         }
     }
@@ -268,138 +268,98 @@ void scaleRow(RawMatrix<D, B, T> &m, T scale, int rtarget) {
 }
 
 
-            
+
 // Perform matrix implementation using naive gauss jordan.
 template<int D, int B, typename T>
 RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
     RawMatrix<D, B, T> out = mkRawIdentity<D, B, T>();
 
 #ifdef DEBUG
-    std::cout << "===\n";
-    std::cout << __LINE__ << ":input:\n";
+    std::cout << "INPUT\n";
     printRaw<D, B, T>(m);
-    std::cout << "===\n";
+    std::cout <<"==\n";
 #endif
-
-
-    // pivoting - look at blocks on the diagonal
-    // We are pivoting *rows* around.
-    // For each element on the diagonal, check if it's a 0.
-    // If it this, then find a suitable row to pivot with.
-    for(int d = 0; d < D * B; d++) {
-        if (m[d][d] != 0) continue;
-
-#ifdef DEBUG
-        std::cout << "need to pivot for diagonal: " << d << "\n";
-#endif
-
-        // We do need to pivot...
-        int biggest_row = d;
-
-        // Look for a row to pivot with
-        for(int rcur = 0; rcur < B * D; rcur++) {
-            // In the rth block in the rcurent(b)th collumn, look at the dth element.
-            if (std::abs(m[rcur][d]) > std::abs(m[biggest_row][d])) {
-                biggest_row = rcur;
-            }
-        }
-
-#ifdef DEBUG
-        std::cout << "swapping (" << d <<") with row(" << biggest_row << ")";
-#endif
-
-        // we now looked for the biggest row. If it is *equal* to the current
-        // row, then we have all 0's on this dimension of the space,
-        // so we're screwed, since this dimension is being sent into the null space.
-        // Give up.
-        if (biggest_row == d) {
-            success = false;
-            return out;
-        }
-
-        // We have a row to pivot
-        swapRowsMutRawMat<D, B, T>(m, biggest_row, d);
-        swapRowsMutRawMat<D, B, T>(out, biggest_row, d);
-
-#ifdef DEBUG
-        std::cout << "===\n";
-        std::cout << __LINE__ << ":PIVOTED(" << d <<") MATRIX:\n";
-        printRaw<D, B, T>(m);
-        std::cout << __LINE__ << ":PIVOTED(" << d <<") OUT:\n";
-        printRaw<D, B, T>(out);
-        std::cout << "===\n";
-#endif
-    } // end pivot loop
-
-
-#ifdef DEBUG
-    std::cout << "===\n";
-    std::cout << __LINE__ << ":FINAL PIVOTED MATRIX:\n";
-    printRaw<D, B, T>(m);
-    std::cout << __LINE__ << ":FINAL PIVOTED OUT:\n";
-    printRaw<D, B, T>(out);
-    std::cout << "===\n";
-#endif
-
-    // Now we have a fully pivoted matrix, write an assert that checks this.
-    for(int i = 0; i < B * D; i++) {
-        assert(m[i][i] != 0 && "pivoted matrix has zeroes on diagonal!");
-    }
-    
-    /*
-    // scale everything down by the pivot so we get a 1 on the pivot
-    // row
-    for(int r = 0; r < B * D; r++) {
-        const T scale = m[r][r];
-        for(int c = 0; c < B * D; c++) {
-            m[r][c] = m[r][c] / scale;
-            out[r][c] = out[r][c] / scale;
-        }
-    }
-
-#ifdef DEBUG
-    std::cout << "===\n";
-    std::cout << __LINE__ << ":SCALED MATRIX:\n";
-    printRaw<D, B, T>(m);
-    std::cout << __LINE__ << ":SCALED OUT:\n";
-    printRaw<D, B, T>(out);
-    std::cout << "===\n";
-#endif
-    */
-
 
     // With each row, kill every column other than the current diagonal column
     // with the 1st row, kill all coeffs other than that of the first column *in the first row*
     // with the 2nd row, kill all coeffs other than that of the 2nd column *in the second row*
+    // We use "d" to denote that we are interested in the *d*iagonal element (pivot)
     // Src = doing the killing (the pivot we use to kill)
     // Column = going to be killed (the columns we make 0 at the source row)
-    for(int rsrc = 0; rsrc < B * D; rsrc++) {
+    for(int dsrc = 0; dsrc < B * D; dsrc++) {
 
         // Scale our row so that we get a 1 at our pivot position
         // a   CUR   c   d
         // transforms to:
         // a/CUR 1     c/CUR  d /CUR
-        {
-            const T pivot = m[rsrc][rsrc];
-            assert(pivot != 0 && "pivot is 0!");
-            scaleRow<D, B, T>(m, (T)(1.0 / pivot), rsrc);
-            scaleRow<D, B, T>(out, (T)(1.0 / pivot), rsrc);
-        }
-
+        
 #ifdef DEBUG
-    std::cout << "===\n";
-    std::cout << __LINE__ << ":MATRIX AFTER SCALE, BEFORE ROW MANIPULATION(" << rsrc <<"):\n";
-    printRaw<D, B, T>(m);
-    std::cout << __LINE__ << ":OUT AFTER SCALE, BEFORE ROW MANIPULATION(" << rsrc <<"):\n";
-    printRaw<D, B, T>(out);
-    std::cout << "===\n";
-
-        static const float EPS = 1e-2;
-        const T pivot = m[rsrc][rsrc];
-        std::cout << "PIVOT FOR ROW(" << rsrc << ") = " << pivot << "\n";
-        assert(std::abs(pivot - 1) < EPS && "pivot is not normalized!");
+        std::cout << "pivot: " << m[dsrc][dsrc] << "\n";
 #endif
 
+        // 1. SWAP PIVOTS IF PIVOT IS 0
+        if (m[dsrc][dsrc] == 0){
+            // We do need to pivot, so pivot using the largest row.
+            // First find the largest row
+            int biggest_row = dsrc;
+
+            // Look for a row to pivot with
+            for(int rpivot = dsrc+1; rpivot < B * D; rpivot++) {
+                // In the rth block in the rpivotent(b)th collumn, look at the dth element.
+                if (std::abs(m[rpivot][dsrc]) > std::abs(m[biggest_row][dsrc])) {
+                    biggest_row = rpivot;
+                }
+            }
+
+            // we now looked for the biggest row. If it is *equal* to the current
+            // row, then we have all 0's on this dimension of the space,
+            // so we're screwed, since this dimension is being sent into the null space.
+            // Give up.
+            if (biggest_row == dsrc) {
+                success = false;
+                return out;
+            }
+#ifdef DEBUG
+            std::cout << "pivoting row(" << dsrc << ") with row(" << biggest_row <<")\n";
+#endif
+
+            // We have a row to pivot
+            swapRowsMutRawMat<D, B, T>(m, biggest_row, dsrc);
+            swapRowsMutRawMat<D, B, T>(out, biggest_row, dsrc);
+        }
+
+
+#ifdef DEBUG
+        std::cout << "===\n";
+        std::cout << __LINE__ << ":MATRIX AFTER PIVOT(" << dsrc <<"):\n";
+        printRaw<D, B, T>(m);
+        std::cout << __LINE__ << ":OUT AFTER PIVOT(" << dsrc <<"):\n";
+        printRaw<D, B, T>(out);
+        std::cout << "===\n";
+#endif
+
+
+        // 2. SCALE PIVOT TO BE 1
+        {
+            static const float EPS = 1e-2;
+            const T pivot = m[dsrc][dsrc];
+            assert(pivot != 0 && "pivot is 0!");
+            scaleRow<D, B, T>(m, (T)(1.0 / pivot), dsrc);
+            scaleRow<D, B, T>(out, (T)(1.0 / pivot), dsrc);
+        }
+
+
+#ifdef DEBUG
+        std::cout << "===\n";
+        std::cout << __LINE__ << ":MATRIX AFTER SCALING(" << dsrc <<"):\n";
+        printRaw<D, B, T>(m);
+        std::cout << __LINE__ << ":OUT AFTER SCALING(" << dsrc <<"):\n";
+        printRaw<D, B, T>(out);
+        std::cout << "===\n";
+#endif
+
+
+        // 3. PERFORM ROW ELIMINATION
         // 1 a b
         // p q r
         // x y z
@@ -418,35 +378,25 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
         // 0 0 z'
         // ->
         for(int rtarget = 0; rtarget < B * D; rtarget++) {
-            if (rsrc == rtarget) continue;
+            if (dsrc == rtarget) continue;
 
             // Pick the element in the target row, at the (pivot column = src row)
-            const T scale = m[rtarget][rsrc];
+            const T scale = m[rtarget][dsrc];
 
-            AxmyRow<D, B, T>(m, scale, rsrc, rtarget);
-            AxmyRow<D, B, T>(out, scale, rsrc, rtarget);
+            AxmyRow<D, B, T>(m, scale, dsrc, rtarget);
+            AxmyRow<D, B, T>(out, scale, dsrc, rtarget);
         }
 
 #ifdef DEBUG
-    std::cout << "===\n";
-    std::cout << __LINE__ << ":MATRIX AFTER ROW MANIPULATION(" << rsrc <<"):\n";
-    printRaw<D, B, T>(m);
-    std::cout << __LINE__ << ":OUT AFTER ROW MANIPULATION(" << rsrc <<"):\n";
-    printRaw<D, B, T>(out);
-    std::cout << "===\n";
+        std::cout << "===\n";
+        std::cout << __LINE__ << ":MATRIX AFTER ROW MANIPULATION(" << dsrc <<"):\n";
+        printRaw<D, B, T>(m);
+        std::cout << __LINE__ << ":OUT AFTER ROW MANIPULATION(" << dsrc <<"):\n";
+        printRaw<D, B, T>(out);
+        std::cout << "===\n";
 #endif
 
-        //for(int c = 0; c < B * D; c++) {
-        //    if (c == rsrc) {
-        //        assert(std::abs(m[rsrc][c] - 1) < EPS);
-        //    }
-        //    else {
-        //        assert(std::abs(m[rsrc][c]) < EPS);
-        //    }
-        //}
-
-
-    } // end rsrc loop
+    } // end dsrc loop
 
 
 #ifdef DEBUG
@@ -485,7 +435,7 @@ bool isRawEqual(RawMatrix<D, B, T> r1, std::string r1Name, RawMatrix<D, B, T> r2
                     std::cout<<"\n"<<r2Name << ":\n";
                     printRaw<D, B, T>(r2);
                 }
-                
+
 
                 return false;
             }
@@ -540,7 +490,7 @@ void checkMatmulSameSize(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T
 
     RawMatrix<D, B, T> raw = mulRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d1), 
             mkRawMatrix<D, B, T>(d2));
-    
+
     std::cout<<"\nMULRAW:\n";
     printRaw<D, B, T>(raw);
 
