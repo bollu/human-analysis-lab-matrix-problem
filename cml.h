@@ -1095,7 +1095,24 @@ CML_API bool cml_inverse(MATRIX *m, MATRIX *opt) {
     int lwork = n * n;
     double work[lwork];
     int info;
+
+    double rcond;
+
     dgetrf_(&n, &n, m->data, &n, ipiv, &info);
+
+    if (info < 0) {
+        cml_cpy(m, backup);
+        cml_free(backup);
+        printf("cml_error: %d\n", __LINE__);
+        errno = EDOM;
+        return false;
+    } else if (info > 0) {
+        cml_cpy(m, backup);
+        cml_free(backup);
+        printf("cml_error: %d\n", __LINE__);
+        return false;
+    }
+
     dgetri_(&n, m->data, &n, ipiv, work, &lwork, &info);
 
     if (info < 0) {

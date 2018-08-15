@@ -12,7 +12,7 @@ static const float EPS = 0.2;
 // sanity check that the two matrices are inverses of each other
 // by multiplying them and checking that the result is almost-identity.
 template<int D, int B, typename T>
-void checkInverseByMatmul(RawMatrix<D, B, FT> m1, RawMatrix<D, B, FT> m2, float eps) {
+bool checkInverseByMatmul(RawMatrix<D, B, FT> m1, RawMatrix<D, B, FT> m2, float eps) {
     RawMatrix<D, B, FT> mul = mulRawMatrix<D, B, T>(m1, m2);
 
     for(int i = 0; i < D * B; i++) {
@@ -20,14 +20,18 @@ void checkInverseByMatmul(RawMatrix<D, B, FT> m1, RawMatrix<D, B, FT> m2, float 
             const T val = mul[i][j];
             if (i == j) {
                 // id[i][j] = 1
-                assert(std::abs(1 - val) < eps);
+                // assert (std::abs(1 - val) < eps);
+                if (std::abs(1 - val) > eps) return false;
             }
             else {
                 // id[i][j] = 1
-                assert(std::abs(val) < eps);
+                // assert(std::abs(val) < eps);
+                if(std::abs(val) >= eps) return false;
             }
         }
     }
+
+    return false;
 }
 
 
@@ -60,13 +64,10 @@ void displayInverses() {
     while(1) {
         DiagMatrix<D, B, FT> d = genRandDiagFloatMatrix<D, B, FT>();
         RawMatrix<D, B, FT> raw = mkRawMatrix<D, B, FT>(d);
-        bool success;
+        bool success  = false;
         RawMatrix<D, B, FT> inv = invRawMatrixCML<D, B, FT>(raw, success);
 
         if (!success) continue;
-
-        // check that raw * inv == identity
-        checkInverseByMatmul<D, B, FT>(raw, inv, EPS);
 
         std::cout << "====\n";
         std::cout << "MATRIX:\n";
@@ -90,14 +91,24 @@ void runInverseRawTest() {
 
     for(int i = 0; i < NUM_INV_CHECKS; i++) {
         RawMatrix<D, B, FT> m = genRandRawFloatMatrix<D, B, FT>();
+        std::cout << "input:\n";
+        printRaw<D, B, FT>(m);
 
-        bool success;
+        bool success = false;
         RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, success);
         if (!success) continue;
 
+        std::cout << "refinv:\n";
+        printRaw<D, B, FT>(refinv);
+
 
         // sanity check that the m * inv == identity
-        checkInverseByMatmul<D, B, FT>(m, refinv, EPS);
+        if(!checkInverseByMatmul<D, B, FT>(m, refinv, EPS)) {
+            continue;
+            std::cout << "!!! REFERENCE MATRIX IS ILL CONDITIONED\n";
+        }
+
+        std::cout << "--reference matrix works--\n";
 
         RawMatrix<D, B, FT> inv = invRawMatrixOurs<D, B, FT>(m, success);
         if (success != true) {
@@ -115,8 +126,6 @@ void runInverseRawTest() {
                 EPS, LogLevel::LogOn);
         assert(isEqual && "matrices not equal!");
 
-        // sanity check that the m * inv == identity
-        checkInverseByMatmul<D, B, FT>(m, inv, EPS);
 
     }
 }
@@ -174,13 +183,13 @@ int main(int argc, char *argv[]) {
         while(1) {
             RawMatrix<D, B, FT> m = inputRaw<D, B, FT>();
 
-            bool refsuccess;
+            bool refsuccess = false;
             // Note that this is code duplication, so reduce this
             // duplication!
             RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, refsuccess);
 
 
-            bool oursuccess;
+            bool oursuccess = false;
             RawMatrix<D, B, FT> ourinv = invRawMatrixOurs<D, B, FT>(m, oursuccess);
             assert(refsuccess == oursuccess && "Somehow, our successes are different!");
 
@@ -206,8 +215,6 @@ int main(int argc, char *argv[]) {
                     EPS, LogLevel::LogOn);
             assert(isEqual && "matrices not equal!");
 
-            // sanity check that the m * inv == identity
-            checkInverseByMatmul<D, B, FT>(m, ourinv, EPS);
 
             std::cout << "continue? [y/N]->";
             char c;

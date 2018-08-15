@@ -215,6 +215,7 @@ RawMatrix<D, B, T> mkRawIdentity() {
 }
 
 
+
 // Unfortunately,we are in C land, and we must mutate for performance.
 // In light of this, we take a reference to the matrix and the
 // rows to be switched
