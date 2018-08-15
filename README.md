@@ -15,11 +15,11 @@ Provide proofs of complexity of algorithms.
 
 - There is some annoying bug with block size ≠ diagonal size, will fix.
 - Of course not, there's no bug, I'm just retarded. Assume `D = 7, B = 3`, all
-  of my assumptions about indexing (neatly picking up a block) will screw up?
-  Check that I'm not assuming something about the shape. I'm pretty sure I am.
-   The problem is most likely at the part where when you block multiple, you'll
-  take a block of size `DxD`, which needs to be picked up correctly from the
-   other matrices. Too sleepy right now.
+of my assumptions about indexing (neatly picking up a block) will screw up?
+Check that I'm not assuming something about the shape. I'm pretty sure I am.
+The problem is most likely at the part where when you block multiple, you'll
+take a block of size `DxD`, which needs to be picked up correctly from the
+other matrices. Too sleepy right now.
 
 
 - I'll probably do this for now: add a method called `ix(i, j)` which allows
@@ -29,13 +29,17 @@ instance for `matmul<D, D, T>` which is specialized for the case when `D = B`.
 This can be used to implement a "naive" inverse, but this is obviously bad.
 
 - No no, the chunking works, I was just trashing memory like a bad C++ programmer.
-  Use the `GLIBCXX` debug check to figure out what was screwing up, and now
-  matmul works :) Next step, implement matrix inverse using gaussian elimination.
+Use the `GLIBCXX` debug check to figure out what was screwing up, and now
+matmul works :) Next step, implement matrix inverse using gaussian elimination.
+
+- Also note that currently, I'm only implementing this on matrices that have
+the same block/diagonal size, I should generalize this to matrices with
+different block/diagonal size, but with the same total size
 
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is
-fully parallel across all 3 loops, so we can permute the loops however we want,
-using blocks is one particular permutation). So we can simply multiply across
+        fully parallel across all 3 loops, so we can permute the loops however we want,
+        using blocks is one particular permutation). So we can simply multiply across
 the blocks --- the blocks are diagonal, so we just need to multiply the diagonal
 elemens.
 
@@ -60,17 +64,17 @@ also make it nice to write the inverse. I believe not, because choosing
 
 ## Why C++
 - I like the language, thanks to nice type-level safety features to make sure
-  I don't mess up with indexing, etc. 
+I don't mess up with indexing, etc. 
 
 - I can run TySan and ASAN, two very powerful sanitizers to make sure my code
-  does not do stupid things. This is almost as good as having haskell-like checks
-  with very little of the slowdowns.
+does not do stupid things. This is almost as good as having haskell-like checks
+with very little of the slowdowns.
 
 - It lets me use Polly to see if we get interesting perf gains automatically.
-  This isn't even cheating since I worked some amount on polly ;)
+This isn't even cheating since I worked some amount on polly ;)
 
 ## Benchmarks (TODO)
 
 ## Thanks to:
 - [CML](https://github.com/MichaelJWelsh/cml), because I didn't trust my own
-  benchmark inverse implementation to be 100% correct.
+benchmark inverse implementation to be 100% correct.
