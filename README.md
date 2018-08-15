@@ -136,6 +136,9 @@ to "regular" matmul. nice!
 - Yay, conjecture works (when I use the `cml_inverse` implementation). Now let's
 implement gauss-jordan.
 
+- Note that this suggests a complexity of `O(D * Inverse(B * B matrices)) = O(D * B^3)`,
+which is lower than the naive `O((D * B)^3) = O(D^3 * B^3)`
+
 
 
 ### Matmul
