@@ -200,8 +200,8 @@ int main(int argc, char *argv[]) {
     // Flag added to see what the output of multiplying matrices of the form
     // (B1, D1) * (B2, D2) is.
     if (mulexperimentdifferentsize) {
-            DiagMatrix<2, 6, FT> m1 = genRandDiagFloatMatrix<2, 6, FT>();
-            DiagMatrix<4, 3, FT> m2 = genRandDiagFloatMatrix<4, 3, FT>();
+            DiagMatrix<6, 2, FT> m1 = genRandDiagFloatMatrix<6, 2, FT>();
+            DiagMatrix<2, 6, FT> m2 = genRandDiagFloatMatrix<2, 6, FT>();
 
             RawMatrix<12, FT> m3 = 
                 mulRawMatrix<12, FT>(

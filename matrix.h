@@ -62,8 +62,26 @@ constexpr int lcm(int A, int B) {
 // hm, this is interesting.
 // TODO: I should have an enable_if D1 * B1 == D2 * B2, but that can wait.
 template<int D1, int B1, int D2, int B2, typename T>
-DiagMatrix<B1*B2/lcm(D1, D2), lcm(D1, D2), T> 
-        mulDiagMatrixGeneral(DiagMatrix<D1, B1, T> m1, DiagMatrix<D2, B2, T> m2) {
+DiagMatrix<gcd(D1, D2), B1 * D1 / gcd(D1, D2), T> 
+       mulDiagMatrixGeneral(DiagMatrix<D1, B1, T> m1, DiagMatrix<D2, B2, T> m2) {
+ constexpr int BLOCK = gcd(B1, B2);
+ constexpr int DIAG = B1 * D1 / BLOCK;
+
+ DiagMatrix<DIAG, BLOCK, T> out;
+
+ for(int i = 0; i < BLOCK; i++) {
+     for(int j = 0; j < BLOCK; j++) {
+         out.blocks[i][j] = mkZeroDiag<DIAG, BLOCK, T>();
+         for(int k = 0; k < BLOCK; k++) {
+             for(int d = 0; d < DIAG; d++) {
+                    out.blocks[i][j][d] += m1.blocks[i][k][d] * m2.blocks[k][j][d];
+             }
+         }
+     }
+ }
+
+ return out;
+
     
 
 };
@@ -525,7 +543,8 @@ RawMatrix<N, FloatT> genRandRawFloatMatrix(const int mod = 8, const int SIZE = 1
 // TODO: remove code duplication?
 template<int D, int B, typename T>
 void checkMatmulSameSize(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
-    DiagMatrix<D, B, T> diag  = mulDiagMatrixSameSize(d1, d2);
+    //DiagMatrix<D, B, T> diag  = mulDiagMatrixSameSize(d1, d2);
+    DiagMatrix<D, B, T> diag  = mulDiagMatrixGeneral(d1, d2);
     std::cout<<"\nMULDIAG:\n";
     printDiag<D, B, T>(diag);
     std::cout<<"\n====\n";

@@ -164,8 +164,54 @@ Intuition suggests that the resultant should be of the form `(B1 * D1 / LCM (D1,
 I'm going to add  a flag to take matrices and see what the resultants are.
 Flag is called `mulexperimentdifferentsize`.
 
-- Eyeballing, it seems to be actually `(B1 * D1 / GCD(D1, D2), GCD(D1, D2))`. 
+- Eyeballing, it seems to be actually `(GCD(B1, B2), D1 * B1 / GCD(B1, B2))`
   Will see what the actual math is.
+
+
+- Getting to the math, here's a rough sketch (I'm not convinced by it).
+
+```
+Let X = (depth D, blocks B)
+Let Y =  (depth D', blocks B')
+
+Now, X(i, j) is non-zero whenever [i/B] % D == [j/B] %D
+Similarly, Y(i, j) is non-zero when [i/B]' % D' == [j/B'] % D',
+where [a] = floor(a).
+
+
+Z = X * Y
+
+For the matrices to be multipliable, D * B = D' * B'.
+
+Z(i, j) = \sum_{k=1}^(D * B) X(i, k) * Y(k, j)
+
+The non-zero entries in a matrix M(p, q) of type (B0, D0) will be in the
+set NONZERO(B0, D0) =  {(αB + δ, βB + δ) | 0 <= α, β < B0, 0 <= δ <= D0)}
+
+For X, Y to be non-zero we require that *BOTH*:
+(i, k) ∈ NONZERO(B, D) AND 
+(k, j) ∈ NONZERO(B', D')
+
+That is, all points that are in 
+{(αB + δ, βB + δ) | 0 <= α, β < B, 0 <= δ < D)} ∩ 
+{(α'B' + δ', β'B' + δ') | 0 <= α', β' < B', 0 <= δ' < D')}.
+
+I'll use <B> = {kB | k ∈ naturals } to borrow some ring theory notation
+(<B> = principal ideal of B). I'll use N/D to refer to the set of naturals.
+[0..D)
+
+Written this way, we are looking for:
+
+(<B> + D) ∩ (<B'> + D') = 
+(<B> ∩ <B'>) + (<B> ∩ D') + (<B'> ∩ D) + (D ∩ D') = 
+(<gcd(B, B')>=B0) + (?=D0)
+
+We can identify what (?=D0) is since we now have B0. We know that
+B * D = B0 * D0 ⇒ D0 = B * D / gcd(B, B').
+
+However, this is very unsatisfying to me (the arrival at what D0 is),
+so I want a cleaner proof of this.
+```
 
 
 
