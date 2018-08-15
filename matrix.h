@@ -249,10 +249,54 @@ void checkMatmulSameSize(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T
 
 // I have no idea if the inverse of these matrices continues to be a
 // diagonal matrix, so I'm going to run experiments and find out :)
-// Yay to knowing how to program
+// Yay to knowing how to program.
+// https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/matrix-inverse
+// TODO: make this a Maybe
 template<int D, int B, typename T>
-RawMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m) {
+RawMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
     RawMatrix<D, B, T> out;
+
+    // (row, col) representation.
+    // pivoting - look at blocks on the diagonal
+    // We are pivoting *rows* around.
+    for(int b = 0; b < B; b++) {
+        for(int d = 0; d < D; d++) {
+            // if we have a pivot element, continue
+            if (m.blocks[b][b][d] != 0) continue;
+
+            // we don't have a pivot element on this column, so look for the
+            // row that has the largest element on *this column*.
+            // Not all rows of the matrix are useful, only rows of other
+            // blocks that have the same "d" will be active.
+            int biggest_row = b;
+            for(int r = 0; r < B; r++) {
+                // In the rth block in the current(b)th collumn, look at the dth element.
+                if (std::abs(m.blocks[r][b][d]) > std::abs(m.blocks[biggest_row][b][d])) {
+                    biggest_row = r;
+                }
+            }
+
+            // we now looked for the biggest row. If it is *equal* to the current
+            // row, then we have all 0's on this dimension of the space,
+            // so we're screwed, since this dimension is being sent into the null space.
+            // Give up.
+            if (biggest_row == b) {
+                success = false;
+                return out;
+            }
+            
+
+
+        }
+
+    }
+
+    for(int c = 0; c < B * D; c++) {
+        for(int r = 0; r < B * D; r++) {
+            // scale everything down by the identity number
+        }
+    }
+
     return out;
 };
 
@@ -272,7 +316,10 @@ CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
 
     // we don't check for success here, so let's first check for success in the case of
     // raw
-    RawMatrix<D, B, T> diag_inverse  = invDiagMatrix(d);
+    bool diag_success = false;
+    RawMatrix<D, B, T> diag_inverse  = invDiagMatrix(d, diag_success);
+
+    assert(diag_success == true && "invDiag unable to invert matrix that invRaw can!");
 
 
     const bool isEqual = isRawEqual<D, B, T>(raw, "raw", diag_inverse, "diag", eps, LogLevel::LogOn);

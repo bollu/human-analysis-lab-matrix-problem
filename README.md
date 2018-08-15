@@ -41,6 +41,12 @@ going to produce another diagonal matrix? Intuitively, I think when one
 of their diagonal sizes is a multiple of the other. not sure what happens
 when the diagonal sizes are coprime.
 
+- Anyway, now I'm looking into inverses. Intuitively, the inverse of such a 
+matrix should look similar, because inverses are horrible in general ;) 
+Plus, these matrices maybe sparse, and inverses of sparse matrices
+need not be sparse (I do not remember how I know this fact, but I googled
+and [found the math.se answer again (link)](https://math.stackexchange.com/questions/471136/inverse-of-sparse-matrix-is-not-generally-sparse).
+
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is
         fully parallel across all 3 loops, so we can permute the loops however we want,
