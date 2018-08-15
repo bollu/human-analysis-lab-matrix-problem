@@ -519,8 +519,8 @@ void checkMatmulSameSize(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T
     printDiag<D, B, T>(diag);
     std::cout<<"\n====\n";
 
-    RawMatrix<D*B, T> raw = mulRawMatrix<D*B, T>(mkRawMatrix<D*B, T>(d1), 
-            mkRawMatrix<D*B, T>(d2));
+    RawMatrix<D*B, T> raw = mulRawMatrix<D*B, T>(mkRawMatrix<D, B, T>(d1), 
+            mkRawMatrix<D, B, T>(d2));
 
     std::cout<<"\nMULRAW:\n";
     printRaw<D*B, T>(raw);
@@ -602,11 +602,14 @@ template<int D, int B, typename T>
 CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
 
     bool success = false;
-    RawMatrix<D*B, T> raw = invRawMatrixCML<D*B, T>(mkRawMatrix<D*B, T>(d), success);
+    const RawMatrix<D*B, T> rawd = mkRawMatrix<D, B, T>(d);
+    const RawMatrix<D*B, T> refinv = invRawMatrixCML<D*B, T>(rawd, success);
     if (!success) return CIRNonInvertible;
 
-    // CML is screwed, it doesn't check if the matrix is ill conditioned...
-    if (!checkInverseByMatmul<D*B, T>(mkRawMatrix<D*B, T>(d), raw, eps)) {
+    // CML is screwed, it doesn't check if the matrix is ill conditioned, so 
+    // we manually check if the supposed inverse is an inverse by performing
+    // matmul.
+    if (!checkInverseByMatmul<D*B, T>(mkRawMatrix<D, B, T>(d), refinv, eps)) {
         return CIRNonInvertible;
     }
 
@@ -618,8 +621,8 @@ CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
     assert(diag_success == true && "invDiag unable to invert matrix that invRaw can!");
 
 
-    const bool isEqual = isRawEqual<D*B, T>(raw, "raw", 
-            mkRawMatrix<D*B, T>(diag_inverse), "diag", 
+    const bool isEqual = isRawEqual<D*B, T>(refinv, "reference inverse (raw)", 
+            mkRawMatrix<D, B, T>(diag_inverse), "test inverse (from diag)", 
             eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
 
