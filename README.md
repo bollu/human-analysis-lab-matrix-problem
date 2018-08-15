@@ -147,6 +147,10 @@ of freedom (in fact, it's quite confusing).
 `invRawMatrixCML` which will be the reference implementation, and one call
 `invRawMatrixOurs` which will be the implementation I create using gauss-jordan.
 
+- Some meta-engineering: change `int` to `size_t` everywhere, fix the shitty
+printing in some places, create operator overloads for `*`, `<<` and create a
+benchmarking rig using google's bench library.
+
 
 
 ### Matmul
