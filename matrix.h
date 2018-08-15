@@ -26,7 +26,9 @@ void printDiag(const DiagMatrix<D, B, T> &diag) {
             const int jinner = j % D;
 
             if(iinner == jinner) {
-                std::cout << std::right << std::setw(MAT_COLUMN_WIDTH) << diag.blocks[iblock][jblock][iinner];
+                std::cout << std::right << std::setprecision(3) <<
+                    std::setw(MAT_COLUMN_WIDTH) <<
+                    diag.blocks[iblock][jblock][iinner];
             }
             else {
                 std::cout << std::right << std::setw(MAT_COLUMN_WIDTH) << "0";
@@ -251,9 +253,33 @@ void checkMatmulSameSize(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T
 // https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/matrix-inverse
 // TODO: make this a Maybe
 template<int D, int B, typename T>
-RawMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
-    RawMatrix<D, B, T> out;
+DiagMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
+    DiagMatrix<D, B, T> out;
 
+    // for every D, we get BxB solutions to solve
+    for(int d = 0; d < D; d++) {
+        RawMatrix<B, 1, T> subproblem;
+
+        // gather subproblem
+        for(int i = 0; i < B; i++) {
+            for(int j = 0; j < B; j++) {
+                subproblem[i][j] = m.blocks[i][j][d];
+            }
+        }
+
+        RawMatrix<B, 1, T> subsoln = invRawMatrix<B, 1, T>(subproblem, success);
+        if (!success) { return out; }
+        // scatter subsolution;
+        for(int i = 0; i < B; i++) {
+            for(int j = 0; j < B; j++) {
+                out.blocks[i][j][d] = subsoln[i][j];
+            }
+        }
+    }
+    success = true;
+    return out;
+
+    /*
     // (row, col) representation.
     // pivoting - look at blocks on the diagonal
     // We are pivoting *rows* around.
@@ -294,8 +320,7 @@ RawMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
             // scale everything down by the identity number
         }
     }
-
-    return out;
+    */
 };
 
 
@@ -315,12 +340,12 @@ CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
     // we don't check for success here, so let's first check for success in the case of
     // raw
     bool diag_success = false;
-    RawMatrix<D, B, T> diag_inverse  = invDiagMatrix(d, diag_success);
+    DiagMatrix<D, B, T> diag_inverse  = invDiagMatrix(d, diag_success);
 
     assert(diag_success == true && "invDiag unable to invert matrix that invRaw can!");
 
 
-    const bool isEqual = isRawEqual<D, B, T>(raw, "raw", diag_inverse, "diag", eps, LogLevel::LogOn);
+    const bool isEqual = isRawEqual<D, B, T>(raw, "raw", mkRawMatrix<D, B, T>(diag_inverse), "diag", eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
 
     if (isEqual) return CIRSuccess;

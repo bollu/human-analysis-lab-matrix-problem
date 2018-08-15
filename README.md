@@ -133,6 +133,10 @@ conclude is that we need to pick each equation from each row, which reduces
 to "regular" matmul. nice!
 
 
+- Yay, conjecture works (when I use the `cml_inverse` implementation). Now let's
+implement gauss-jordan.
+
+
 
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is

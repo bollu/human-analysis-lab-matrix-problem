@@ -4,29 +4,9 @@ using FT = float;
 
 static const int NUM_MUL_CHECKS = 100;
 static const int NUM_INV_CHECKS = 100;
-static const int D = 5;
+static const int D = 1;
 static const int B = 3;
 static const float EPS = 0.1;
-
-void runInverseTest() {
-    for(int i = 0; i < NUM_INV_CHECKS;) {
-        DiagMatrix<D, B, FT> m = genRandDiagFloatMatrix<D, B, FT>();
-        std::cout << "running matmul check (" << i << ")...";
-        CheckInverseResult cir = checkInverse(m, EPS);
-
-        if (cir == CIRSuccess) {
-            std::cout << "success!\n";
-            i++;
-        }
-        else if (cir == CIRFail) {
-            std::cout << "failed";
-        }
-        else {
-            std::cout << "non-invertible, retrying\n";
-        }
-
-    }
-}
 
 // sanity check that the two matrices are inverses of each other
 // by multiplying them and checking that the result is almost-identity.
@@ -53,6 +33,29 @@ void sanityCheckInverse(RawMatrix<D, B, FT> m1, RawMatrix<D, B, FT> m2, float ep
     std::cout << "\n";
 
 }
+
+
+void runInverseTest() {
+    std::cout << "\n\n** INVERSE TEST **\n";
+    for(int i = 0; i < NUM_INV_CHECKS;) {
+        DiagMatrix<D, B, FT> m = genRandDiagFloatMatrix<D, B, FT>();
+        std::cout << "running matinv check (" << i << ")...";
+        CheckInverseResult cir = checkInverse(m, EPS);
+
+        if (cir == CIRSuccess) {
+            std::cout << "success!\n";
+            i++;
+        }
+        else if (cir == CIRFail) {
+            std::cout << "failed";
+        }
+        else {
+            std::cout << "non-invertible, retrying\n";
+        }
+
+    }
+}
+
 
 void displayInverses() {
     while(1) {
@@ -93,7 +96,8 @@ int main() {
         std::cout << "success\n";
 
     }
-    displayInverses();
+    //displayInverses();
+    runInverseTest();
 
     // runInverseTest();
     // std::cout << "MATMUL SUCCEEDS\n";
