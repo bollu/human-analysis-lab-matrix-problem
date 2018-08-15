@@ -230,7 +230,7 @@ template<int D, int B, typename T>
 void checkMatmulSameSize(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
     DiagMatrix<D, B, T> diag  = mulDiagMatrixSameSize(d1, d2);
     std::cout<<"\nMULDIAG:\n";
-    printDiag<D, B, T>(d1);
+    printDiag<D, B, T>(diag);
     std::cout<<"\n====\n";
 
     RawMatrix<D, B, T> raw = mulRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d1), 
