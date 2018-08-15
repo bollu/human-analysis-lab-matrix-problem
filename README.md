@@ -139,6 +139,10 @@ implement gauss-jordan.
 - Note that this suggests a complexity of `O(D * Inverse(B * B matrices)) = O(D * B^3)`,
 which is lower than the naive `O((D * B)^3) = O(D^3 * B^3)`
 
+- This is unrelated (as in, it is engineering), but I should change `RawMatrix<D, B, T>`
+to `RawMatrix<N, T>`. It makes no sense for `RawMatrix` to have two degrees
+of freedom (in fact, it's quite confusing).
+
 
 
 ### Matmul

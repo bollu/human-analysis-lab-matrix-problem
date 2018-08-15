@@ -157,8 +157,9 @@ MATRIX *mkCMLFromRaw(RawMatrix<D, B, T> r) {
     return cml;
 }
 
+// perform matrix inversion using CML.
 template<int D, int B, typename T>
-RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m, bool &success) {
+RawMatrix<D, B, T> invRawMatrixCML(RawMatrix<D, B, T> m, bool &success) {
     RawMatrix<D, B, T> out;
     MATRIX *cmlm = mkCMLFromRaw<D, B, T>(m);
 
@@ -177,6 +178,30 @@ RawMatrix<D, B, T> invRawMatrix(RawMatrix<D, B, T> m, bool &success) {
 
     return out;
 }
+
+
+// Perform matrix implementation using naive gauss jordan.
+template<int D, int B, typename T>
+RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
+    RawMatrix<D, B, T> out;
+    MATRIX *cmlm = mkCMLFromRaw<D, B, T>(m);
+
+    assert(cmlm != nullptr);
+    success = cml_inverse(cmlm, NULL);
+    if (!success) return out;
+
+    // I am almost 100% sure I can memcpy() between these two, but just
+    // to be safe, I hesitate to do that -- memory layouts and whatnot.
+    // Let's get this running first, optimise later.
+    for(int i = 0; i < D * B; i++) {
+        for(int j = 0; j < D * B; j++) {
+            out[i][j] = cml_get(cmlm, i, j);
+        }
+    }
+
+    return out;
+}
+
 
 enum class LogLevel {
     LogOn = 1,
@@ -209,6 +234,14 @@ bool isRawEqual(RawMatrix<D, B, T> r1, std::string r1Name, RawMatrix<D, B, T> r2
     return true;
 }
 
+template<typename FloatT>
+FloatT genRandFloat(const int mod, const int SIZE) { 
+    const FloatT sign = rand() % 2 ? 1 : -1;
+    const FloatT val = rand() % mod;
+
+    return (sign * val) / (FloatT)SIZE;
+}
+
 // NOTE: actually use a PRNG, don't (rand() % mod) / SIZE, this will bias
 // the results
 template<int D, int B, typename FloatT>
@@ -217,14 +250,24 @@ DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZ
     for(int i = 0; i < B; i++) {
         for(int j = 0; j < B; j++) {
             for(int k = 0; k < D; k++) {
-                const FloatT sign = rand() % 2 ? 1 : -1;
-                const FloatT val = rand() % mod;
-                diag.blocks[i][j][k] = (sign * val) / SIZE;
+                diag.blocks[i][j][k] = genRandFloat<FloatT>(mod, SIZE);
             }
         }
     }
 
     return diag;
+}
+
+
+template<int D, int B, typename FloatT>
+RawMatrix<D, B, FloatT> genRandRawFloatMatrix(const int mod = 8, const int SIZE = 1) {
+    RawMatrix<D, B, FloatT> raw;
+    for(int i = 0; i < D * B; i++) {
+        for(int j = 0; j < D * B; j++) {
+            raw[i][j] = genRandFloat<FloatT>(mod, SIZE);
+        }
+    }
+    return raw;
 }
 
 // TODO: remove code duplication?
@@ -267,7 +310,7 @@ DiagMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
             }
         }
 
-        RawMatrix<B, 1, T> subsoln = invRawMatrix<B, 1, T>(subproblem, success);
+        RawMatrix<B, 1, T> subsoln = invRawMatrixCML<B, 1, T>(subproblem, success);
         if (!success) { return out; }
         // scatter subsolution;
         for(int i = 0; i < B; i++) {
@@ -334,7 +377,7 @@ template<int D, int B, typename T>
 CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
 
     bool success = false;
-    RawMatrix<D, B, T> raw = invRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d), success);
+    RawMatrix<D, B, T> raw = invRawMatrixCML<D, B, T>(mkRawMatrix<D, B, T>(d), success);
     if (!success) return CIRNonInvertible;
 
     // we don't check for success here, so let's first check for success in the case of
