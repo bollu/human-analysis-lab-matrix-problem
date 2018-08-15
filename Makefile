@@ -7,5 +7,7 @@ SANITIZERS=""
 mat.out: main.cpp matrix.h cml.h
 	clang main.cpp  -o mat.out -lstdc++ -std=c++17 -Wall  $(SANITIZERS) -lblas -llapack -g 
 
+test: mat.out
+	./mat.out --multest --invtest
 run: mat.out
-	./mat.out
+	./mat.out $?

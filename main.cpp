@@ -38,9 +38,9 @@ void runInverseDiagTest() {
 void displayInverses() {
     while(1) {
         DiagMatrix<D, B, FT> d = genRandDiagFloatMatrix<D, B, FT>();
-        RawMatrix<D, B, FT> raw = mkRawMatrix<D, B, FT>(d);
+        RawMatrix<D*B, FT> raw = mkRawMatrix<D,B, FT>(d);
         bool success  = false;
-        RawMatrix<D, B, FT> inv = invRawMatrixCML<D, B, FT>(raw, success);
+        RawMatrix<D*B, FT> inv = invRawMatrixCML<D*B, FT>(raw, success);
 
         if (!success) continue;
 
@@ -48,7 +48,7 @@ void displayInverses() {
         std::cout << "MATRIX:\n";
         printDiag(d);
         std::cout << "INVERSE:\n";
-        printRaw<D, B, FT>(inv);
+        printRaw<D*B,FT>(inv);
         std::cout << "\n";
 
         char c;
@@ -65,28 +65,28 @@ void runInverseRawTest() {
     std::cout << "checking correctness of matrix inverse of rawMat\n";
 
     for(int i = 0; i < NUM_INV_CHECKS;) {
-        RawMatrix<D, B, FT> m = genRandRawFloatMatrix<D, B, FT>();
+        RawMatrix<D*B, FT> m = genRandRawFloatMatrix<D*B, FT>();
 
         bool success = false;
-        RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, success);
+        RawMatrix<D*B, FT> refinv = invRawMatrixCML<D*B, FT>(m, success);
         if (!success) continue;
 
         // sanity check that the m * inv == identity
-        if(!checkInverseByMatmul<D, B, FT>(m, refinv, EPS)) {
+        if(!checkInverseByMatmul<D*B, FT>(m, refinv, EPS)) {
             continue;
         }
 
 
-        RawMatrix<D, B, FT> inv = invRawMatrixOurs<D, B, FT>(m, success);
+        RawMatrix<D*B, FT> inv = invRawMatrixOurs<D*B, FT>(m, success);
         if (success != true) {
             std::cout << "CML inverse:\n";
-            printRaw<D, B, FT>(refinv);
+            printRaw<D*B, FT>(refinv);
             std::cout << "\n";
             assert(success == true && "a matrix inversion that succeeded with CML did not succeed with ours");
         }
 
 
-        const bool isEqual = isRawEqual<D, B, FT>(refinv,
+        const bool isEqual = isRawEqual<D*B, FT>(refinv,
                 "CML (reference)",
                 inv, 
                 "ours", 
@@ -152,16 +152,16 @@ int main(int argc, char *argv[]) {
 
     if (invtestrawmanual) {
         while(1) {
-            RawMatrix<D, B, FT> m = inputRaw<D, B, FT>();
+            RawMatrix<D*B, FT> m = inputRaw<D*B, FT>();
 
             bool refsuccess = false;
             // Note that this is code duplication, so reduce this
             // duplication!
-            RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, refsuccess);
+            RawMatrix<D*B, FT> refinv = invRawMatrixCML<D*B, FT>(m, refsuccess);
 
 
             bool oursuccess = false;
-            RawMatrix<D, B, FT> ourinv = invRawMatrixOurs<D, B, FT>(m, oursuccess);
+            RawMatrix<D*B, FT> ourinv = invRawMatrixOurs<D*B, FT>(m, oursuccess);
             assert(refsuccess == oursuccess && "Somehow, our successes are different!");
 
             if (!oursuccess) {
@@ -172,14 +172,14 @@ int main(int argc, char *argv[]) {
 
 
             std::cout << "REFERENCE INVERSE:\n";
-            printRaw<D, B, FT>(refinv);
+            printRaw<D*B, FT>(refinv);
 
             std::cout << "OUR INVERSE:\n";
-            printRaw<D, B, FT>(ourinv);
+            printRaw<D*B, FT>(ourinv);
 
 
 
-            const bool isEqual = isRawEqual<D, B, FT>(refinv,
+            const bool isEqual = isRawEqual<D*B, FT>(refinv,
                     "CML (reference)",
                     ourinv,
                     "ours", 

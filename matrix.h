@@ -121,14 +121,14 @@ DiagMatrix<D, B, T> mkIdentityDiag() {
 template<int D, int B, typename T>
 DiagMatrix<D, B, T> invDiag(DiagMatrix<D, B, T> m1, DiagMatrix<D, B, T> d2);
 
-template<int D, int B, typename T>
-using RawMatrix = std::array< std::array<T, D * B>, D * B>;
+template<int N, typename T>
+using RawMatrix = std::array< std::array<T, N>, N>;
 
 
-template<int D, int B, typename T>
-void printRaw(const RawMatrix<D, B, T> &raw) {
-    for(int i = 0; i < D*B; i++) {
-        for(int j = 0; j < D*B; j++) {
+template<int N, typename T>
+void printRaw(const RawMatrix<N, T> &raw) {
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             std::cout << std::setprecision(3) <<  std::left << std::setw(MAT_COLUMN_WIDTH) << raw[i][j] << " ";
         }
         std::cout << "\n";
@@ -136,19 +136,19 @@ void printRaw(const RawMatrix<D, B, T> &raw) {
 }
 
 
-template<int D, int B, typename T>
-RawMatrix<D, B, T> inputRaw() {
+template<int N, typename T>
+RawMatrix<N, T> inputRaw() {
 
     std::cout << "please input matrix:\n";
-    RawMatrix<D, B, T> input;
-    for(int i = 0; i < D*B; i++) {
-        for(int j = 0; j < D*B; j++) {
+    RawMatrix<N, T> input;
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             std::cin >> input[i][j];
         }
     }
 
     std::cout << "input matrix:\n";
-    printRaw<D, B, T>(input);
+    printRaw<N, T>(input);
     std::cout << "\n";
 
     return input;
@@ -159,8 +159,8 @@ RawMatrix<D, B, T> inputRaw() {
 
 
 template<int D, int B, typename T>
-RawMatrix<D, B, T> mkRawMatrix(DiagMatrix<D, B, T> m) {
-    RawMatrix<D, B, T> raw;
+RawMatrix<D*B,  T> mkRawMatrix(DiagMatrix<D, B, T> m) {
+    RawMatrix<D*B, T> out;
     for(int i = 0; i < D*B; i++) {
         for(int j = 0; j < D*B; j++) {
             const int iblock = i / D;
@@ -169,23 +169,23 @@ RawMatrix<D, B, T> mkRawMatrix(DiagMatrix<D, B, T> m) {
             const int jinner = j % D;
 
             if(iinner == jinner) {
-                raw[i][j] = m.blocks[iblock][jblock][iinner];
+                out[i][j] = m.blocks[iblock][jblock][iinner];
             }
             else {
-                raw[i][j] = 0;
+                out[i][j] = 0;
             }
         }
     }
-    return raw;
+    return out;
 }
 
-template<int D, int B, typename T>
-RawMatrix<D, B, T> mulRawMatrix(RawMatrix<D, B, T> m1, RawMatrix<D, B, T>m2) {
-    RawMatrix<D, B, T> raw;
-    for(int i = 0; i < D * B; i++) {
-        for(int j = 0; j < D * B; j++) {
+template<int N, typename T>
+RawMatrix<N, T> mulRawMatrix(RawMatrix<N, T> m1, RawMatrix<N, T>m2) {
+    RawMatrix<N, T> raw;
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             raw[i][j] = 0;
-            for(int k = 0; k < D * B; k++) {
+            for(int k = 0; k < N; k++) {
                 raw[i][j] += m1[i][k] * m2[k][j];
             }
         }
@@ -196,11 +196,11 @@ RawMatrix<D, B, T> mulRawMatrix(RawMatrix<D, B, T> m1, RawMatrix<D, B, T>m2) {
 
 // ouch, this cost is painful. Just switch to CML.
 // TODO: switch to unique_ptr<, custom_dtor>;
-template<int D, int B, typename T>
-MATRIX *mkCMLFromRaw(RawMatrix<D, B, T> r) {
-    MATRIX *cml = cml_new(D * B, D*B);
-    for(int i = 0; i < D * B; i++) {
-        for(int j = 0; j < D * B; j++) {
+template<int N, typename T>
+MATRIX *mkCMLFromRaw(RawMatrix<N, T> r) {
+    MATRIX *cml = cml_new(N, N);
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             // TODO: look into cml_set_{row, col}
             cml_set(cml, i, j, r[i][j]);
         }
@@ -209,10 +209,10 @@ MATRIX *mkCMLFromRaw(RawMatrix<D, B, T> r) {
 }
 
 // perform matrix inversion using CML.
-template<int D, int B, typename T>
-RawMatrix<D, B, T> invRawMatrixCML(RawMatrix<D, B, T> m, bool &success) {
-    RawMatrix<D, B, T> out;
-    MATRIX *cmlm = mkCMLFromRaw<D, B, T>(m);
+template<int N, typename T>
+RawMatrix<N, T> invRawMatrixCML(RawMatrix<N, T> m, bool &success) {
+    RawMatrix<N, T> out;
+    MATRIX *cmlm = mkCMLFromRaw<N, T>(m);
 
     assert(cmlm != nullptr);
     success = cml_inverse(cmlm, NULL);
@@ -221,8 +221,8 @@ RawMatrix<D, B, T> invRawMatrixCML(RawMatrix<D, B, T> m, bool &success) {
     // I am almost 100% sure I can memcpy() between these two, but just
     // to be safe, I hesitate to do that -- memory layouts and whatnot.
     // Let's get this running first, optimise later.
-    for(int i = 0; i < D * B; i++) {
-        for(int j = 0; j < D * B; j++) {
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             out[i][j] = cml_get(cmlm, i, j);
         }
     }
@@ -230,11 +230,11 @@ RawMatrix<D, B, T> invRawMatrixCML(RawMatrix<D, B, T> m, bool &success) {
     return out;
 }
 
-template<int D, int B, typename T>
-RawMatrix<D, B, T> mkRawIdentity() {
-    RawMatrix<D, B, T> id;
-    for(int i = 0; i < B * D; i++) {
-        for(int j = 0; j < B * D; j++) {
+template<int N, typename T>
+RawMatrix<N, T> mkRawIdentity() {
+    RawMatrix<N, T> id;
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             id[i][j] = i == j;
         }
     }
@@ -248,12 +248,12 @@ RawMatrix<D, B, T> mkRawIdentity() {
 // In light of this, we take a reference to the matrix and the
 // rows to be switched
 // mut = mutate
-template<int D, int B, typename T>
-void swapRowsMutRawMat(RawMatrix<D, B, T> &m, int r1, int r2) {
-    assert(r1 >= 0 && r1 <= B * D && "row out of bounds");
-    assert(r2 >= 0 && r2 <= B * D && "row out of bounds");
+template<int N, typename T>
+void swapRowsMutRawMat(RawMatrix<N, T> &m, int r1, int r2) {
+    assert(r1 >= 0 && r1 <= N && "row out of bounds");
+    assert(r2 >= 0 && r2 <= N && "row out of bounds");
     T temp;
-    for(int c = 0; c < B * D; c++) {
+    for(int c = 0; c < N; c++) {
         temp = m[r1][c];
         m[r1][c] = m[r2][c];
         m[r2][c] = temp;
@@ -262,17 +262,17 @@ void swapRowsMutRawMat(RawMatrix<D, B, T> &m, int r1, int r2) {
 
 // AxmyRow = "Ax - y" a row (a play on "axpy") 
 // Perform the row operation: Rtarget <- Rtarget - scale * Rsrc
-template<int D, int B, typename T>
-void AxmyColumn(RawMatrix<D, B, T> &m, T scale, int csrc, int ctarget) {
-    for(int r = 0; r < B * D; r++) {
+template<int N, typename T>
+void AxmyColumn(RawMatrix<N, T> &m, T scale, int csrc, int ctarget) {
+    for(int r = 0; r < N; r++) {
         m[r][ctarget] -= scale * m[r][csrc];
     }
 }
 
 
-template<int D, int B, typename T>
-void AxmyRow(RawMatrix<D, B, T> &m, T scale, int rsrc, int rtarget) {
-    for(int c = 0; c < B * D; c++) {
+template<int N, typename T>
+void AxmyRow(RawMatrix<N, T> &m, T scale, int rsrc, int rtarget) {
+    for(int c = 0; c < N; c++) {
         m[rtarget][c] -= scale * m[rsrc][c];
     }
 }
@@ -280,32 +280,32 @@ void AxmyRow(RawMatrix<D, B, T> &m, T scale, int rsrc, int rtarget) {
 
 
 // Perform the column operation: ctarget <- ctarget * scale
-template<int D, int B, typename T>
-void scaleColumn(RawMatrix<D, B, T> &m, T scale, int ctarget) {
-    for(int r = 0; r < B * D; r++) {
+template<int N, typename T>
+void scaleColumn(RawMatrix<N, T> &m, T scale, int ctarget) {
+    for(int r = 0; r < N; r++) {
         m[r][ctarget] *= scale;
     }
 }
 
 
 // Perform the row operation: rowtarget <- rowtarget * scale
-template<int D, int B, typename T>
-void scaleRow(RawMatrix<D, B, T> &m, T scale, int rtarget) {
-    for(int c = 0; c < B * D; c++) {
+template<int N, typename T>
+void scaleRow(RawMatrix<N, T> &m, T scale, int rtarget) {
+    for(int c = 0; c < N; c++) {
         m[rtarget][c] *= scale;
     }
 }
 
 
 
-// Perform matrix implementation using naive gauss jordan.
-template<int D, int B, typename T>
-RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
-    RawMatrix<D, B, T> out = mkRawIdentity<D, B, T>();
+// Perform matrix inversion using naive gauss jordan.
+template<int N,  typename T>
+RawMatrix<N, T> invRawMatrixOurs(RawMatrix<N, T> m, bool &success) {
+    RawMatrix<N, T> out = mkRawIdentity<N, T>();
 
 #ifdef DEBUG
     std::cout << "INPUT\n";
-    printRaw<D, B, T>(m);
+    printRaw<N, T>(m);
     std::cout <<"==\n";
 #endif
 
@@ -315,7 +315,7 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
     // We use "d" to denote that we are interested in the *d*iagonal element (pivot)
     // Src = doing the killing (the pivot we use to kill)
     // Column = going to be killed (the columns we make 0 at the source row)
-    for(int dsrc = 0; dsrc < B * D; dsrc++) {
+    for(int dsrc = 0; dsrc < N; dsrc++) {
 
         // Scale our row so that we get a 1 at our pivot position
         // a   CUR   c   d
@@ -333,7 +333,7 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
             int biggest_row = dsrc;
 
             // Look for a row to pivot with
-            for(int rpivot = dsrc+1; rpivot < B * D; rpivot++) {
+            for(int rpivot = dsrc+1; rpivot < N; rpivot++) {
                 // In the rth block in the rpivotent(b)th collumn, look at the dth element.
                 if (std::abs(m[rpivot][dsrc]) > std::abs(m[biggest_row][dsrc])) {
                     biggest_row = rpivot;
@@ -353,17 +353,17 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
 #endif
 
             // We have a row to pivot
-            swapRowsMutRawMat<D, B, T>(m, biggest_row, dsrc);
-            swapRowsMutRawMat<D, B, T>(out, biggest_row, dsrc);
+            swapRowsMutRawMat<N, T>(m, biggest_row, dsrc);
+            swapRowsMutRawMat<N, T>(out, biggest_row, dsrc);
         }
 
 
 #ifdef DEBUG
         std::cout << "===\n";
         std::cout << __LINE__ << ":MATRIX AFTER PIVOT(" << dsrc <<"):\n";
-        printRaw<D, B, T>(m);
+        printRaw<N, T>(m);
         std::cout << __LINE__ << ":OUT AFTER PIVOT(" << dsrc <<"):\n";
-        printRaw<D, B, T>(out);
+        printRaw<N, T>(out);
         std::cout << "===\n";
 #endif
 
@@ -373,17 +373,17 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
             static const float EPS = 1e-2;
             const T pivot = m[dsrc][dsrc];
             assert(pivot != 0 && "pivot is 0!");
-            scaleRow<D, B, T>(m, (T)(1.0 / pivot), dsrc);
-            scaleRow<D, B, T>(out, (T)(1.0 / pivot), dsrc);
+            scaleRow<N, T>(m, (T)(1.0 / pivot), dsrc);
+            scaleRow<N, T>(out, (T)(1.0 / pivot), dsrc);
         }
 
 
 #ifdef DEBUG
         std::cout << "===\n";
         std::cout << __LINE__ << ":MATRIX AFTER SCALING(" << dsrc <<"):\n";
-        printRaw<D, B, T>(m);
+        printRaw<N, T>(m);
         std::cout << __LINE__ << ":OUT AFTER SCALING(" << dsrc <<"):\n";
-        printRaw<D, B, T>(out);
+        printRaw<N, T>(out);
         std::cout << "===\n";
 #endif
 
@@ -406,22 +406,22 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
         // 0 1 r''
         // 0 0 z'
         // ->
-        for(int rtarget = 0; rtarget < B * D; rtarget++) {
+        for(int rtarget = 0; rtarget < N; rtarget++) {
             if (dsrc == rtarget) continue;
 
             // Pick the element in the target row, at the (pivot column = src row)
             const T scale = m[rtarget][dsrc];
 
-            AxmyRow<D, B, T>(m, scale, dsrc, rtarget);
-            AxmyRow<D, B, T>(out, scale, dsrc, rtarget);
+            AxmyRow<N, T>(m, scale, dsrc, rtarget);
+            AxmyRow<N, T>(out, scale, dsrc, rtarget);
         }
 
 #ifdef DEBUG
         std::cout << "===\n";
         std::cout << __LINE__ << ":MATRIX AFTER ROW MANIPULATION(" << dsrc <<"):\n";
-        printRaw<D, B, T>(m);
+        printRaw<N, T>(m);
         std::cout << __LINE__ << ":OUT AFTER ROW MANIPULATION(" << dsrc <<"):\n";
-        printRaw<D, B, T>(out);
+        printRaw<N, T>(out);
         std::cout << "===\n";
 #endif
 
@@ -431,9 +431,9 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
 #ifdef DEBUG
     std::cout << "===\n";
     std::cout << __LINE__ << ":FINAL MATRIX:\n";
-    printRaw<D, B, T>(m);
+    printRaw<N, T>(m);
     std::cout << __LINE__ << ":FINAL OUT:\n";
-    printRaw<D, B, T>(out);
+    printRaw<N, T>(out);
     std::cout << "===\n";
 #endif
 
@@ -446,10 +446,12 @@ enum class LogLevel {
     LogOn = 1,
     LogOff = 0
 };
-template<int D, int B, typename T>
-bool isRawEqual(RawMatrix<D, B, T> r1, std::string r1Name, RawMatrix<D, B, T> r2, std::string r2Name, const T eps, LogLevel l) {
-    for(int i = 0; i < D * B; i++) {
-        for(int j = 0; j < D * B; j++) {
+template<int N, typename T>
+bool isRawEqual(RawMatrix<N, T> r1, std::string r1Name, 
+        RawMatrix<N, T> r2, std::string r2Name, 
+        const T eps, LogLevel l) {
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             if (std::abs(r1[i][j] - r2[i][j]) > eps) {
 
                 // we need to log
@@ -459,10 +461,10 @@ bool isRawEqual(RawMatrix<D, B, T> r1, std::string r1Name, RawMatrix<D, B, T> r2
                     std::cout << r2Name << "[" << i << "][" << j << "] = " << r2[i][j] << "\n";
 
                     std::cout<<r1Name << ":\n";
-                    printRaw<D, B, T>(r1);
+                    printRaw<N, T>(r1);
 
                     std::cout<<"\n"<<r2Name << ":\n";
-                    printRaw<D, B, T>(r2);
+                    printRaw<N, T>(r2);
                 }
 
 
@@ -498,11 +500,11 @@ DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZ
 }
 
 
-template<int D, int B, typename FloatT>
-RawMatrix<D, B, FloatT> genRandRawFloatMatrix(const int mod = 8, const int SIZE = 1) {
-    RawMatrix<D, B, FloatT> raw;
-    for(int i = 0; i < D * B; i++) {
-        for(int j = 0; j < D * B; j++) {
+template<int N, typename FloatT>
+RawMatrix<N, FloatT> genRandRawFloatMatrix(const int mod = 8, const int SIZE = 1) {
+    RawMatrix<N, FloatT> raw;
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             raw[i][j] = genRandFloat<FloatT>(mod, SIZE);
         }
     }
@@ -517,15 +519,15 @@ void checkMatmulSameSize(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T
     printDiag<D, B, T>(diag);
     std::cout<<"\n====\n";
 
-    RawMatrix<D, B, T> raw = mulRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d1), 
-            mkRawMatrix<D, B, T>(d2));
+    RawMatrix<D*B, T> raw = mulRawMatrix<D*B, T>(mkRawMatrix<D*B, T>(d1), 
+            mkRawMatrix<D*B, T>(d2));
 
     std::cout<<"\nMULRAW:\n";
-    printRaw<D, B, T>(raw);
+    printRaw<D*B, T>(raw);
 
-    RawMatrix<D, B, T> diag2raw = mkRawMatrix(diag);
+    RawMatrix<D*B, T> diag2raw = mkRawMatrix(diag);
 
-    const bool isEqual = isRawEqual<D, B, T>(raw, "raw", diag2raw, "diag", eps, LogLevel::LogOn);
+    const bool isEqual = isRawEqual<D*B, T>(raw, "raw", diag2raw, "diag", eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
 }
 
@@ -540,7 +542,7 @@ DiagMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
 
     // for every D, we get BxB solutions to solve
     for(int d = 0; d < D; d++) {
-        RawMatrix<B, 1, T> subproblem;
+        RawMatrix<B, T> subproblem;
 
         // gather subproblem
         for(int i = 0; i < B; i++) {
@@ -549,7 +551,7 @@ DiagMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
             }
         }
 
-        RawMatrix<B, 1, T> subsoln = invRawMatrixOurs<B, 1, T>(subproblem, success);
+        RawMatrix<B, T> subsoln = invRawMatrixOurs<B, T>(subproblem, success);
         if (!success) { return out; }
         // scatter subsolution;
         for(int i = 0; i < B; i++) {
@@ -573,12 +575,12 @@ enum CheckInverseResult {
 
 // sanity check that the two matrices are inverses of each other
 // by multiplying them and checking that the result is almost-identity.
-template<int D, int B, typename T>
-bool checkInverseByMatmul(RawMatrix<D, B, T> m1, RawMatrix<D, B, T> m2, float eps) {
-    RawMatrix<D, B, T> mul = mulRawMatrix<D, B, T>(m1, m2);
+template<int N, typename T>
+bool checkInverseByMatmul(RawMatrix<N, T> m1, RawMatrix<N, T> m2, float eps) {
+    RawMatrix<N, T> mul = mulRawMatrix<N, T>(m1, m2);
 
-    for(int i = 0; i < D * B; i++) {
-        for(int j = 0; j < D * B; j++) {
+    for(int i = 0; i < N; i++) {
+        for(int j = 0; j < N; j++) {
             const T val = mul[i][j];
             if (i == j) {
                 // id[i][j] = 1
@@ -600,11 +602,11 @@ template<int D, int B, typename T>
 CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
 
     bool success = false;
-    RawMatrix<D, B, T> raw = invRawMatrixCML<D, B, T>(mkRawMatrix<D, B, T>(d), success);
+    RawMatrix<D*B, T> raw = invRawMatrixCML<D*B, T>(mkRawMatrix<D*B, T>(d), success);
     if (!success) return CIRNonInvertible;
 
     // CML is screwed, it doesn't check if the matrix is ill conditioned...
-    if (!checkInverseByMatmul<D, B, T>(mkRawMatrix<D, B, T>(d), raw, eps)) {
+    if (!checkInverseByMatmul<D*B, T>(mkRawMatrix<D*B, T>(d), raw, eps)) {
         return CIRNonInvertible;
     }
 
@@ -616,7 +618,9 @@ CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
     assert(diag_success == true && "invDiag unable to invert matrix that invRaw can!");
 
 
-    const bool isEqual = isRawEqual<D, B, T>(raw, "raw", mkRawMatrix<D, B, T>(diag_inverse), "diag", eps, LogLevel::LogOn);
+    const bool isEqual = isRawEqual<D*B, T>(raw, "raw", 
+            mkRawMatrix<D*B, T>(diag_inverse), "diag", 
+            eps, LogLevel::LogOn);
     assert(isEqual && "matrices not equal!");
 
     if (isEqual) return CIRSuccess;
