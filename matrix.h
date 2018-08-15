@@ -1,3 +1,4 @@
+#define _GLIBCXX_DEBUG
 #include <iostream>
 #include <iomanip>
 #include <array>
