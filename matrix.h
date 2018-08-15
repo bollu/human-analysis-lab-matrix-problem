@@ -241,63 +241,98 @@ void AxmyColumn(RawMatrix<D, B, T> &m, T scale, int csrc, int ctarget) {
 }
 
 
+template<int D, int B, typename T>
+void AxmyRow(RawMatrix<D, B, T> &m, T scale, int rsrc, int rtarget) {
+    for(int c = 0; c < B * D; c++) {
+        m[rtarget][c] -= scale * m[rsrc][c];
+    }
+}
+
+
+
+// Perform the column operation: ctarget <- ctarget * scale
+template<int D, int B, typename T>
+void scaleColumn(RawMatrix<D, B, T> &m, T scale, int ctarget) {
+    for(int r = 0; r < B * D; r++) {
+        m[r][ctarget] *= scale;
+    }
+}
+
+
+// Perform the row operation: rowtarget <- rowtarget * scale
+template<int D, int B, typename T>
+void scaleRow(RawMatrix<D, B, T> &m, T scale, int rtarget) {
+    for(int c = 0; c < B * D; c++) {
+        m[rtarget][c] *= scale;
+    }
+}
+
+
             
 // Perform matrix implementation using naive gauss jordan.
 template<int D, int B, typename T>
 RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
     RawMatrix<D, B, T> out = mkRawIdentity<D, B, T>();
 
+#ifdef DEBUG
+    std::cout << "===\n";
+    std::cout << __LINE__ << ":input:\n";
+    printRaw<D, B, T>(m);
+    std::cout << "===\n";
+#endif
+
 
     // (row, col) representation.
     // pivoting - look at blocks on the diagonal
     // We are pivoting *rows* around.
     for(int c = 0; c < D * B; c++) {
-        for(int r = 0; r < D * B; r++) {
-            // if we have a pivot element, continue
-            if (m[r][c] != 0) continue;
+        if (m[c][c] != 0) continue;
+        int biggest_row = c;
 
-            // we don't have a pivot element on this column, so look for the
-            // row that has the largest element on *this column*.
-            // Not all rows of the matrix are useful, only rows of other
-            // blocks that have the same "d" will be active.
-            int biggest_row = r;
-            for(int curr = 0; curr < B * D; curr++) {
-                // In the rth block in the current(b)th collumn, look at the dth element.
-                if (std::abs(m[curr][c]) > std::abs(m[biggest_row][c])) {
-                    biggest_row = curr;
-                }
+        // if we have a pivot element, continue
+
+        // we don't have a pivot element on this column, so look for the
+        // row that has the largest element on *this column*.
+        // Not all rows of the matrix are useful, only rows of other
+        // blocks that have the same "d" will be active.
+        for(int curr = 0; curr < B * D; curr++) {
+            // In the rth block in the current(b)th collumn, look at the dth element.
+            if (std::abs(m[curr][c]) > std::abs(m[biggest_row][c])) {
+                biggest_row = curr;
             }
-
-            // we now looked for the biggest row. If it is *equal* to the current
-            // row, then we have all 0's on this dimension of the space,
-            // so we're screwed, since this dimension is being sent into the null space.
-            // Give up.
-            if (biggest_row == r) {
-                success = false;
-                return out;
-            }
-
-            // We have a row to pivot
-            swapRowsMutRawMat<D, B, T>(m, biggest_row, r);
-            swapRowsMutRawMat<D, B, T>(out, biggest_row, r);
         }
 
+        // we now looked for the biggest row. If it is *equal* to the current
+        // row, then we have all 0's on this dimension of the space,
+        // so we're screwed, since this dimension is being sent into the null space.
+        // Give up.
+        if (biggest_row == c) {
+            success = false;
+            return out;
+        }
+
+        // We have a row to pivot
+        swapRowsMutRawMat<D, B, T>(m, biggest_row, c);
+        swapRowsMutRawMat<D, B, T>(out, biggest_row, c);
+
     }
 
-    // Now we have a fully pivoted matrix, write an assert that checks this.
-    for(int i = 0; i < B * D; i++) {
-        assert(m[i][i] != 0 && "pivoted matrix has zeroes on diagonal!");
-    }
 
 #ifdef DEBUG
     std::cout << "===\n";
     std::cout << __LINE__ << ":PIVOTED MATRIX:\n";
     printRaw<D, B, T>(m);
-    std::cout << __LINE__ << ":\nPIVOTED OUT:\n";
+    std::cout << __LINE__ << ":PIVOTED OUT:\n";
     printRaw<D, B, T>(out);
     std::cout << "===\n";
 #endif
+
+    // Now we have a fully pivoted matrix, write an assert that checks this.
+    for(int i = 0; i < B * D; i++) {
+        assert(m[i][i] != 0 && "pivoted matrix has zeroes on diagonal!");
+    }
     
+    /*
     // scale everything down by the pivot so we get a 1 on the pivot
     // row
     for(int r = 0; r < B * D; r++) {
@@ -316,6 +351,7 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
     printRaw<D, B, T>(out);
     std::cout << "===\n";
 #endif
+    */
 
 
     // With each row, kill every column other than the current diagonal column
@@ -324,37 +360,79 @@ RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
     // Src = doing the killing (the pivot we use to kill)
     // Column = going to be killed (the columns we make 0 at the source row)
     for(int rsrc = 0; rsrc < B * D; rsrc++) {
-        static const float EPS = 1e-3;
+
+        // Scale our row so that we get a 1 at our pivot position
+        // a   CUR   c   d
+        // transforms to:
+        // a/CUR 1     c/CUR  d /CUR
+        {
+            const T pivot = m[rsrc][rsrc];
+            assert(pivot != 0 && "pivot is 0!");
+            scaleRow<D, B, T>(m, (T)(1.0 / pivot), rsrc);
+            scaleRow<D, B, T>(out, (T)(1.0 / pivot), rsrc);
+        }
+
+#ifdef DEBUG
+    std::cout << "===\n";
+    std::cout << __LINE__ << ":MATRIX AFTER SCALE, BEFORE ROW MANIPULATION(" << rsrc <<"):\n";
+    printRaw<D, B, T>(m);
+    std::cout << __LINE__ << ":OUT AFTER SCALE, BEFORE ROW MANIPULATION(" << rsrc <<"):\n";
+    printRaw<D, B, T>(out);
+    std::cout << "===\n";
+
+        static const float EPS = 1e-2;
         const T pivot = m[rsrc][rsrc];
+        std::cout << "PIVOT FOR ROW(" << rsrc << ") = " << pivot << "\n";
         assert(std::abs(pivot - 1) < EPS && "pivot is not normalized!");
+#endif
 
-        for(int ctarget = 0; ctarget < B * D; ctarget++) {
-            if (rsrc == ctarget) continue;
+        // 1 a b
+        // p q r
+        // x y z
+        // ->
+        // 1 a b
+        // 0 q' r'
+        // 0 y' z'
+        // 
+        // ->
+        // 1 a b
+        // 0 1 r''
+        // 0 y' z'
+        // ->
+        // 1 0 b'
+        // 0 1 r''
+        // 0 0 z'
+        // ->
+        for(int rtarget = 0; rtarget < B * D; rtarget++) {
+            if (rsrc == rtarget) continue;
 
-            const T scale = m[rsrc][ctarget];
+            // Pick the element in the target row, at the (pivot column = src row)
+            const T scale = m[rtarget][rsrc];
 
-            // 1   0    0    0 ..
-            // a1  CUR(1)  a2   a3 ..
-            // b1  b2   b3(1)   b4
-            // c1  c2   c3   c4(1)
-            //void AxmyColumn(RawMatrix<D, B, T> &m, T scale, int csrc, int ctarget)
-            AxmyColumn<D, B, T>(m, scale, rsrc, ctarget);
-            AxmyColumn<D, B, T>(out, scale, rsrc, ctarget);
+            AxmyRow<D, B, T>(m, scale, rsrc, rtarget);
+            AxmyRow<D, B, T>(out, scale, rsrc, rtarget);
         }
 
-        // check that the row now looks like
-        // ...
-        // 0 0 0 CUR(1) 0 0 0 ...
-        // ...
-        for(int c = 0; c < B * D; c++) {
-            if (c == rsrc) {
-                assert(std::abs(m[rsrc][c] - 1) < EPS);
-            }
-            else {
-                assert(std::abs(m[rsrc][c]) < EPS);
-            }
-        }
-    }
+#ifdef DEBUG
+    std::cout << "===\n";
+    std::cout << __LINE__ << ":MATRIX AFTER ROW MANIPULATION(" << rsrc <<"):\n";
+    printRaw<D, B, T>(m);
+    std::cout << __LINE__ << ":OUT AFTER ROW MANIPULATION(" << rsrc <<"):\n";
+    printRaw<D, B, T>(out);
+    std::cout << "===\n";
+#endif
+
+        //for(int c = 0; c < B * D; c++) {
+        //    if (c == rsrc) {
+        //        assert(std::abs(m[rsrc][c] - 1) < EPS);
+        //    }
+        //    else {
+        //        assert(std::abs(m[rsrc][c]) < EPS);
+        //    }
+        //}
+
+
+    } // end rsrc loop
 
 
 #ifdef DEBUG
