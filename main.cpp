@@ -9,31 +9,6 @@ static const int D = 1;
 static const int B = 2;
 static const float EPS = 0.2;
 
-// sanity check that the two matrices are inverses of each other
-// by multiplying them and checking that the result is almost-identity.
-template<int D, int B, typename T>
-bool checkInverseByMatmul(RawMatrix<D, B, FT> m1, RawMatrix<D, B, FT> m2, float eps) {
-    RawMatrix<D, B, FT> mul = mulRawMatrix<D, B, T>(m1, m2);
-
-    for(int i = 0; i < D * B; i++) {
-        for(int j = 0; j < D * B; j++) {
-            const T val = mul[i][j];
-            if (i == j) {
-                // id[i][j] = 1
-                // assert (std::abs(1 - val) < eps);
-                if (std::abs(1 - val) > eps) return false;
-            }
-            else {
-                // id[i][j] = 1
-                // assert(std::abs(val) < eps);
-                if(std::abs(val) >= eps) return false;
-            }
-        }
-    }
-
-    return false;
-}
-
 
 // Check that our implementation of inverse matches what is expected.
 void runInverseDiagTest() {
@@ -89,26 +64,18 @@ void displayInverses() {
 void runInverseRawTest() {
     std::cout << "checking correctness of matrix inverse of rawMat\n";
 
-    for(int i = 0; i < NUM_INV_CHECKS; i++) {
+    for(int i = 0; i < NUM_INV_CHECKS;) {
         RawMatrix<D, B, FT> m = genRandRawFloatMatrix<D, B, FT>();
-        std::cout << "input:\n";
-        printRaw<D, B, FT>(m);
 
         bool success = false;
         RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, success);
         if (!success) continue;
 
-        std::cout << "refinv:\n";
-        printRaw<D, B, FT>(refinv);
-
-
         // sanity check that the m * inv == identity
         if(!checkInverseByMatmul<D, B, FT>(m, refinv, EPS)) {
             continue;
-            std::cout << "!!! REFERENCE MATRIX IS ILL CONDITIONED\n";
         }
 
-        std::cout << "--reference matrix works--\n";
 
         RawMatrix<D, B, FT> inv = invRawMatrixOurs<D, B, FT>(m, success);
         if (success != true) {
@@ -125,8 +92,7 @@ void runInverseRawTest() {
                 "ours", 
                 EPS, LogLevel::LogOn);
         assert(isEqual && "matrices not equal!");
-
-
+        i++;
     }
 }
 
@@ -174,9 +140,9 @@ int main(int argc, char *argv[]) {
     }
 
     if (invtest) {
-        runInverseRawTest();
         //displayInverses();
         runInverseDiagTest();
+        runInverseRawTest();
     }
 
     if (invtestrawmanual) {

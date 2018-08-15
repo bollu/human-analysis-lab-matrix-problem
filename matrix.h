@@ -7,7 +7,7 @@
 #define CML_IMPLEMENTATION
 #include "cml.h"
 
-#define DEBUG 
+//#define DEBUG 
 
 static const int MAT_COLUMN_WIDTH = 7;
 // D = number of dimensions per diagonal
@@ -521,7 +521,7 @@ DiagMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
             }
         }
 
-        RawMatrix<B, 1, T> subsoln = invRawMatrixCML<B, 1, T>(subproblem, success);
+        RawMatrix<B, 1, T> subsoln = invRawMatrixOurs<B, 1, T>(subproblem, success);
         if (!success) { return out; }
         // scatter subsolution;
         for(int i = 0; i < B; i++) {
@@ -542,12 +542,43 @@ enum CheckInverseResult {
     CIRNonInvertible
 };
 
+
+// sanity check that the two matrices are inverses of each other
+// by multiplying them and checking that the result is almost-identity.
+template<int D, int B, typename T>
+bool checkInverseByMatmul(RawMatrix<D, B, T> m1, RawMatrix<D, B, T> m2, float eps) {
+    RawMatrix<D, B, T> mul = mulRawMatrix<D, B, T>(m1, m2);
+
+    for(int i = 0; i < D * B; i++) {
+        for(int j = 0; j < D * B; j++) {
+            const T val = mul[i][j];
+            if (i == j) {
+                // id[i][j] = 1
+                // assert (std::abs(1 - val) < eps);
+                if (std::abs(1 - val) > eps) return false;
+            }
+            else {
+                // id[i][j] = 1
+                // assert(std::abs(val) < eps);
+                if(std::abs(val) >= eps) return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 template<int D, int B, typename T>
 CheckInverseResult checkInverse(DiagMatrix<D, B, T> d, const T eps) {
 
     bool success = false;
     RawMatrix<D, B, T> raw = invRawMatrixCML<D, B, T>(mkRawMatrix<D, B, T>(d), success);
     if (!success) return CIRNonInvertible;
+
+    // CML is screwed, it doesn't check if the matrix is ill conditioned...
+    if (!checkInverseByMatmul<D, B, T>(mkRawMatrix<D, B, T>(d), raw, eps)) {
+        return CIRNonInvertible;
+    }
 
     // we don't check for success here, so let's first check for success in the case of
     // raw
