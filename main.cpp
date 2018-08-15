@@ -16,7 +16,7 @@ int main() {
         DiagMatrix<D, B, FT> m1 = genRandDiagFloatMatrix<D, B, FT>();
         DiagMatrix<D, B, FT> m2 = genRandDiagFloatMatrix<D, B, FT>();
 
-        checkMatmul(m1, m2, EPS);
+        checkMatmulSameSize(m1, m2, EPS);
         std::cout << "success\n";
 
     }

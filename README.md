@@ -34,7 +34,12 @@ matmul works :) Next step, implement matrix inverse using gaussian elimination.
 
 - Also note that currently, I'm only implementing this on matrices that have
 the same block/diagonal size, I should generalize this to matrices with
-different block/diagonal size, but with the same total size
+different block/diagonal size, but with the same total size.
+
+- This brings up a question, under what conditions are two such matrices
+going to produce another diagonal matrix? Intuitively, I think when one
+of their diagonal sizes is a multiple of the other. not sure what happens
+when the diagonal sizes are coprime.
 
 ### Matmul
 Matmul is not so hard, since we can perform matmul across blocks (matmul is

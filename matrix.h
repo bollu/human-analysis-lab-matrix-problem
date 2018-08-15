@@ -47,9 +47,14 @@ typename DiagMatrix<D, B, T>::Diag mkZeroDiag() {
     return out;
 }
 
+// hm, this is interesting.
+template<int D1, int B1, int D2, int B2, int X1, int X2, typename T>
+DiagMatrix<X1, X2, T> mulDiagMatrixGeneral(DiagMatrix<D1, B1, T> m1, DiagMatrix<D2, B2, T> m2) {
+
+};
 
 template<int D, int B, typename T>
-DiagMatrix<D, B, T> mulDiagMatrix(DiagMatrix<D, B, T> m1, DiagMatrix<D, B, T> m2) {
+DiagMatrix<D, B, T> mulDiagMatrixSameSize(DiagMatrix<D, B, T> m1, DiagMatrix<D, B, T> m2) {
     DiagMatrix<D, B, T> out;
     // we can perform block wise multiplication
     for(int i = 0; i < B; i++) {
@@ -224,8 +229,8 @@ DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZ
 
 // TODO: remove code duplication?
 template<int D, int B, typename T>
-void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
-    DiagMatrix<D, B, T> diag  = mulDiagMatrix(d1, d2);
+void checkMatmulSameSize(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
+    DiagMatrix<D, B, T> diag  = mulDiagMatrixSameSize(d1, d2);
     std::cout<<"\nMULDIAG:\n";
     printDiag<D, B, T>(d1);
     std::cout<<"\n====\n";
