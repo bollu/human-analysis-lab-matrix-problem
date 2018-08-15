@@ -164,6 +164,9 @@ Intuition suggests that the resultant should be of the form `(B1 * D1 / LCM (D1,
 I'm going to add  a flag to take matrices and see what the resultants are.
 Flag is called `mulexperimentdifferentsize`.
 
+- Eyeballing, it seems to be actually `(B1 * D1 / GCD(D1, D2), GCD(D1, D2))`. 
+  Will see what the actual math is.
+
 
 
 ### Matmul

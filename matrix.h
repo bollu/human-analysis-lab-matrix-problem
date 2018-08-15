@@ -60,9 +60,11 @@ constexpr int lcm(int A, int B) {
 }
 
 // hm, this is interesting.
-template<int D1, int B1, int D2, int B2, int X1, int X2, typename T>
+// TODO: I should have an enable_if D1 * B1 == D2 * B2, but that can wait.
+template<int D1, int B1, int D2, int B2, typename T>
 DiagMatrix<B1*B2/lcm(D1, D2), lcm(D1, D2), T> 
         mulDiagMatrixGeneral(DiagMatrix<D1, B1, T> m1, DiagMatrix<D2, B2, T> m2) {
+    
 
 };
 
