@@ -210,7 +210,7 @@ DiagMatrix<D, B, FloatT> genRandDiagFloatMatrix(const int mod = 8, const int SIZ
     DiagMatrix<D, B, FloatT> diag;
     for(int i = 0; i < B; i++) {
         for(int j = 0; j < B; j++) {
-            for(int k = 0; k < B; k++) {
+            for(int k = 0; k < D; k++) {
                 const FloatT sign = rand() % 2 ? 1 : -1;
                 const FloatT val = rand() % mod;
                 diag.blocks[i][j][k] = (sign * val) / SIZE;
@@ -231,6 +231,7 @@ void checkMatmul(DiagMatrix<D, B, T> d1, DiagMatrix<D, B, T> d2, const T eps) {
 
     RawMatrix<D, B, T> raw = mulRawMatrix<D, B, T>(mkRawMatrix<D, B, T>(d1), 
             mkRawMatrix<D, B, T>(d2));
+    
     std::cout<<"\nMULRAW:\n";
     printRaw<D, B, T>(raw);
 
