@@ -106,6 +106,27 @@ void printRaw(const RawMatrix<D, B, T> &raw) {
 }
 
 
+template<int D, int B, typename T>
+RawMatrix<D, B, T> inputRaw() {
+
+    std::cout << "please input matrix:\n";
+    RawMatrix<D, B, T> input;
+    for(int i = 0; i < D*B; i++) {
+        for(int j = 0; j < D*B; j++) {
+            std::cin >> input[i][j];
+        }
+    }
+
+    std::cout << "input matrix:\n";
+    printRaw<D, B, T>(input);
+    std::cout << "\n";
+
+    return input;
+
+}
+
+
+
 
 template<int D, int B, typename T>
 RawMatrix<D, B, T> mkRawMatrix(DiagMatrix<D, B, T> m) {
@@ -179,23 +200,92 @@ RawMatrix<D, B, T> invRawMatrixCML(RawMatrix<D, B, T> m, bool &success) {
     return out;
 }
 
+template<int D, int B, typename T>
+RawMatrix<D, B, T> mkRawIdentity() {
+    RawMatrix<D, B, T> id;
+    for(int i = 0; i < B * D; i++) {
+        for(int j = 0; j < B * D; j++) {
+            id[i][j] = i == j;
+        }
+    }
+    return id;
 
+}
+
+
+// Unfortunately,we are in C land, and we must mutate for performance.
+// In light of this, we take a reference to the matrix and the
+// rows to be switched
+// mut = mutate
+template<int D, int B, typename T>
+void swapRowsMutRawMat(RawMatrix<D, B, T> &m, int r1, int r2) {
+    T temp;
+    for(int c = 0; c < B * D; c++) {
+        temp = m[r1][c];
+        m[r1][c] = m[r2][c];
+        m[r2][c] = temp;
+    }
+}
+
+            
 // Perform matrix implementation using naive gauss jordan.
 template<int D, int B, typename T>
 RawMatrix<D, B, T> invRawMatrixOurs(RawMatrix<D, B, T> m, bool &success) {
-    RawMatrix<D, B, T> out;
-    MATRIX *cmlm = mkCMLFromRaw<D, B, T>(m);
+    RawMatrix<D, B, T> out = mkRawIdentity<D, B, T>();
 
-    assert(cmlm != nullptr);
-    success = cml_inverse(cmlm, NULL);
-    if (!success) return out;
 
-    // I am almost 100% sure I can memcpy() between these two, but just
-    // to be safe, I hesitate to do that -- memory layouts and whatnot.
-    // Let's get this running first, optimise later.
-    for(int i = 0; i < D * B; i++) {
-        for(int j = 0; j < D * B; j++) {
-            out[i][j] = cml_get(cmlm, i, j);
+    // (row, col) representation.
+    // pivoting - look at blocks on the diagonal
+    // We are pivoting *rows* around.
+    for(int c = 0; c < D * B; c++) {
+        for(int r = 0; r < D * B; r++) {
+            // if we have a pivot element, continue
+            if (m[r][c] != 0) continue;
+
+            // we don't have a pivot element on this column, so look for the
+            // row that has the largest element on *this column*.
+            // Not all rows of the matrix are useful, only rows of other
+            // blocks that have the same "d" will be active.
+            int biggest_row = r;
+            for(int curr = 0; curr < B * D; curr++) {
+                // In the rth block in the current(b)th collumn, look at the dth element.
+                if (std::abs(m[curr][c]) > std::abs(m[biggest_row][c])) {
+                    biggest_row = curr;
+                }
+            }
+
+            // we now looked for the biggest row. If it is *equal* to the current
+            // row, then we have all 0's on this dimension of the space,
+            // so we're screwed, since this dimension is being sent into the null space.
+            // Give up.
+            if (biggest_row == r) {
+                success = false;
+                return out;
+            }
+
+            // We have a row to pivot
+            swapRowsMutRawMat<D, B, T>(m, biggest_row, r);
+            swapRowsMutRawMat<D, B, T>(out, biggest_row, r);
+        }
+
+    }
+
+    // Now we have a fully pivoted matrix, write an assert that checks this.
+    for(int i = 0; i < B * D; i++) {
+        assert(m[i][i] != 0 && "pivoted matrix has zeroes on diagonal!");
+    }
+
+    std::cout << __LINE__ << ":PIVOTED MATRIX:\n";
+    printRaw<D, B, T>(m);
+    std::cout << __LINE__ << ":\nPIVOTED OUT:\n";
+    printRaw<D, B, T>(out);
+    std::cout << "\n";
+    
+    
+
+    for(int c = 0; c < B * D; c++) {
+        for(int r = 0; r < B * D; r++) {
+            // scale everything down by the identity number
         }
     }
 
@@ -322,48 +412,6 @@ DiagMatrix<D, B, T> invDiagMatrix(DiagMatrix<D, B, T> m, bool &success) {
     success = true;
     return out;
 
-    /*
-    // (row, col) representation.
-    // pivoting - look at blocks on the diagonal
-    // We are pivoting *rows* around.
-    for(int b = 0; b < B; b++) {
-        for(int d = 0; d < D; d++) {
-            // if we have a pivot element, continue
-            if (m.blocks[b][b][d] != 0) continue;
-
-            // we don't have a pivot element on this column, so look for the
-            // row that has the largest element on *this column*.
-            // Not all rows of the matrix are useful, only rows of other
-            // blocks that have the same "d" will be active.
-            int biggest_row = b;
-            for(int r = 0; r < B; r++) {
-                // In the rth block in the current(b)th collumn, look at the dth element.
-                if (std::abs(m.blocks[r][b][d]) > std::abs(m.blocks[biggest_row][b][d])) {
-                    biggest_row = r;
-                }
-            }
-
-            // we now looked for the biggest row. If it is *equal* to the current
-            // row, then we have all 0's on this dimension of the space,
-            // so we're screwed, since this dimension is being sent into the null space.
-            // Give up.
-            if (biggest_row == b) {
-                success = false;
-                return out;
-            }
-            
-
-
-        }
-
-    }
-
-    for(int c = 0; c < B * D; c++) {
-        for(int r = 0; r < B * D; r++) {
-            // scale everything down by the identity number
-        }
-    }
-    */
 };
 
 

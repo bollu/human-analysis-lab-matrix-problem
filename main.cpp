@@ -1,4 +1,5 @@
 #include "matrix.h"
+#include "cxxopts.hpp"
 
 using FT = float;
 
@@ -95,14 +96,14 @@ void runInverseRawTest() {
 
     for(int i = 0; i < NUM_INV_CHECKS; i++) {
         bool success;
-        RawMatrix<D, B, FT> invreference = invRawMatrixCML<D, B, FT>(m, success);
+        RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, success);
         if (!success) continue;
 
         RawMatrix<D, B, FT> inv = invRawMatrixOurs<D, B, FT>(m, success);
         assert(success == true && "a matrix inversion that succeeded with CML did not succeed with ours");
 
 
-        const bool isEqual = isRawEqual<D, B, FT>(invreference,
+        const bool isEqual = isRawEqual<D, B, FT>(refinv,
                 "CML (reference)",
                 inv, 
                 "ours", 
@@ -115,20 +116,103 @@ void runInverseRawTest() {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+
+    bool multest = false;
+    bool invtest = false;
+    bool invtestrawmanual = false;
+
+    cxxopts::Options options(argv[0], 
+            " - Command line options for the matrix tool");
+
+
+    options
+      .positional_help("[optional args]")
+      .show_positional_help();
+
+    options.add_options()
+        ("multest", "run matmul tests", cxxopts::value<bool>(multest))
+    ("invtest", "run matinv tests", cxxopts::value<bool>(invtest))
+    ("invtestrawmanual", "check correctness of matinv for matraw from user input", cxxopts::value<bool>(invtestrawmanual))
+    ("help", "show help");
+
     srand(time(NULL));
-    for(int i = 0; i < NUM_MUL_CHECKS; i++) {
-        std::cout << "running matmul check (" << i << ")...";
-        DiagMatrix<D, B, FT> m1 = genRandDiagFloatMatrix<D, B, FT>();
-        DiagMatrix<D, B, FT> m2 = genRandDiagFloatMatrix<D, B, FT>();
 
-        checkMatmulSameSize(m1, m2, EPS);
-        std::cout << "success\n";
 
+    auto result = options.parse(argc, argv);
+    if (result.count("help") || (!multest && !invtest && !invtestrawmanual))
+    {
+      std::cout << options.help({""}) << std::endl;
+      exit(0);
     }
-    runInverseRawTest();
-    //displayInverses();
-    runInverseDiagTest();
+
+    if (multest) {
+        for(int i = 0; i < NUM_MUL_CHECKS; i++) {
+            std::cout << "running matmul check (" << i << ")...";
+            DiagMatrix<D, B, FT> m1 = genRandDiagFloatMatrix<D, B, FT>();
+            DiagMatrix<D, B, FT> m2 = genRandDiagFloatMatrix<D, B, FT>();
+
+            checkMatmulSameSize(m1, m2, EPS);
+            std::cout << "success\n";
+
+        }
+    }
+
+    if (invtest) {
+        runInverseRawTest();
+        //displayInverses();
+        runInverseDiagTest();
+    }
+
+    if (invtestrawmanual) {
+        while(1) {
+            RawMatrix<D, B, FT> m = inputRaw<D, B, FT>();
+
+            bool refsuccess;
+            // Note that this is code duplication, so reduce this
+            // duplication!
+            RawMatrix<D, B, FT> refinv = invRawMatrixCML<D, B, FT>(m, refsuccess);
+
+
+            bool oursuccess;
+            RawMatrix<D, B, FT> ourinv = invRawMatrixOurs<D, B, FT>(m, oursuccess);
+            assert(refsuccess == oursuccess && "Somehow, our successes are different!");
+
+            if (!oursuccess) {
+                assert(!refsuccess);
+                std::cout << "\n* matrix is not invertible, as agreed upon by CML and us.\n";
+                continue;
+            }
+
+
+            std::cout << "REFERENCE INVERSE:\n";
+            printRaw<D, B, FT>(refinv);
+
+            std::cout << "OUR INVERSE:\n";
+            printRaw<D, B, FT>(ourinv);
+
+
+
+            const bool isEqual = isRawEqual<D, B, FT>(refinv,
+                    "CML (reference)",
+                    ourinv,
+                    "ours", 
+                    EPS, LogLevel::LogOn);
+            assert(isEqual && "matrices not equal!");
+
+            // sanity check that the m * inv == identity
+            checkInverseByMatmul<D, B, FT>(m, ourinv, EPS);
+
+            std::cout << "continue? [y/N]->";
+            char c;
+            std::cin >> c;
+
+            if (c == 'y') { continue; }
+            break;
+
+        }
+    }
 
     // runInverseDiagTest();
     // std::cout << "MATMUL SUCCEEDS\n";
