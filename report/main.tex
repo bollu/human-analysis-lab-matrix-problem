@@ -189,9 +189,10 @@ def matmulDiagEqCharacter(m1, m2):
     return out
 \end{minted}
 
+\paragraph{\textbf{Time Complexity:}}
 Clearly (from the \texttt{for}-loops in the code), the time complexity of this
 algorithm works out to $\bigO(S^3D)$, which in comparison to the naive
-$\bigO((S \times D)^3) = \bigO(S^3 D^3)$ saves us a factor of around $D^2$.
+$\bigO((S \times D)^3) = \bigO(S^3 D^3)$ saves us a factor of $D^2$.
 
 \subsection{Matrices with different $(S, D)$ character}
 Let us consider trying to multiply matrices of different $(S, D)$ characters.
@@ -236,6 +237,7 @@ just with diagonal $\langle 0~0~\dots~0 \rangle$.
 We have now reduced the original problem of matrix multiplication into the
 original block matrix multiplication of matrices of the same character, $(S', D')$.
 
+\paragraph{\textbf{Time Complexity:}}
 We know that $D' = gcd(D1, D2)$. We also know that $S' \times D' = S1 \times D1$.
 We can therefore derive that $S' = (S1 \times D1) / D' = (S1 \times D1) / gcd(D1, D2)$.
 
@@ -292,11 +294,11 @@ fourth.
 Hence, we can factor the matrix into two matrices as follows:
 
 \[
-    \begin{bmatrix} \alpha  \\ \gamma \end{bmatrix}
+    \begin{bmatrix} \alpha \\ \gamma \end{bmatrix}
     \left [
-        \begin{array}
+        \begin{array}{cc}
             a & p \\
-            c &  r
+            c & r
         \end{array}
     \right ]
     =
@@ -307,11 +309,10 @@ Hence, we can factor the matrix into two matrices as follows:
 \]
 
 
-
 \[
     \begin{bmatrix} \beta  \\ \delta \end{bmatrix}
     \left [
-        \begin{array}
+        \begin{array}{cc}
             b & q \\
             d & s
         \end{array}
@@ -323,6 +324,54 @@ Hence, we can factor the matrix into two matrices as follows:
     \end{bmatrix}
 \]
 
+This suggests that we can solve smaller sets of independent linear equations,
+whose solutions we can combine to solve the larger equation. We need to
+solve the independent linear equations, and then combine them together by
+"scattering" the solutions correctly. This is implemented in 
+\texttt{matrix.h:invDiagMatrix}, along with an implementation of the
+Gauss-Jordan algorithm (\texttt{matrix.h:invRawMatrixOurs}) to perform the
+actual inversion of the smaller system of equations.
+
+\newpage
+\begin{minted}{python}
+def invDiagMatrix(m):
+"""invert an (S, D) matrix. If the matrix is non-invertible, returns None"""
+    (S, D) = matdiagdim(m)
+    out = zeroDiagMatrix()
+
+    # for every D, we get BxB solutions to solve
+    for d in range(D):
+        # subproblem is a SxS matrix
+        subproblem = matnormal(S, S)
+
+        # gather subproblem
+        for i in range(D):
+            for j in range(D):
+                subproblem[i][j] = m.blocks[i][j][d];
+
+        subsoln = invMatrix(subproblem)
+        # system was non-invertible
+        if (subsoln is None): return None
+        
+        # scatter subsolution
+        for i in range(D):
+            for j in range(D):
+                out[i][j][d] = subsoln[i][j];
+
+    # return the final collected system
+    return out
+\end{minted}
+
+\paragraph{\textbf{Time Complexity:}}
+The time complexity of this is $\bigO((\text{invert $S \times S$ matrix}) \times D)$.
+Since I implemented matrix inversion using Gauss-Jordan, this works out to
+$\bigO(S^3 \times D)$. This in contrast to the naive 
+$\bigO(\text{invert $SD \times SD$ matrix}) = \bigO(S^3 D^3)$ saves us a factor of $D^2$.
+
+Once again, as a quick sanity check, plugging in $D = 1$ recovers us $\bigO(S^3)$, which
+is what we would expect to invert a general matrix. And similarly, plugging in
+$S = 1$ lets us recover $\bigO(D)$, which is what we would hope for to invert
+a diagonal matrix.
 
 \section{Closing thoughts}
 I didn't try very hard to push the boundaries of what's possible, in terms 
