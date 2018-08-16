@@ -2,6 +2,8 @@
 import random
 from fractions import gcd
 
+NUMTESTSPERSIZE = 100
+MAXSIZE = 10
 ALIGNMENTSTR = "%6s"
 EPS = 1e-3
 
@@ -20,7 +22,7 @@ def matmulRaw(m1, m2):
     for i in range(I):
         for j in range(J2):
             for k in range(J):
-                print("out[%s][%s](%s) += m1[%s][%s](%s) * m2[%s][%s](%s)" % (i, j, out[i][j], i, k, m1[i][k], k, j, m2[k][j]))
+                # print("out[%s][%s](%s) += m1[%s][%s](%s) * m2[%s][%s](%s)" % (i, j, out[i][j], i, k, m1[i][k], k, j, m2[k][j]))
                 out[i][j] += m1[i][k] * m2[k][j]
     return out
 
@@ -109,7 +111,7 @@ def matmulDiagEqChunking(m1, m2):
         for j in range(SNEW):
             for k in range (SNEW):
                 for d in range(DNEW):
-                    print("> out[%s][%s][%s](%s) += m1[%s][%s][%s](%s) * m2[%s][%s][%s](%s)" % (i, j, d, out[i][j][d], i, k, d, m1[i][k][d], k, j, d, m2[k][j][d]))
+                    # print("> out[%s][%s][%s](%s) += m1[%s][%s][%s](%s) * m2[%s][%s][%s](%s)" % (i, j, d, out[i][j][d], i, k, d, m1[i][k][d], k, j, d, m2[k][j][d]))
                     out[i][j][d] += m1[i][k][d] * m2[k][j][d]
 
     return out
@@ -215,9 +217,12 @@ def rawmatnormsq(m):
 def rawmatloss(m1, m2):
     return rawmatnormsq(rawmatsub(m1, m2))
 
-if __name__ == "__main__":
-    d1 = randmatdiag(2, 3)
-    d2 = randmatdiag(3, 2)
+
+def test_general_matmul_for_sizes(s1, d1, s2, d2):
+    assert s1 * d1 == s2 * d2
+
+    d1 = randmatdiag(s1, d1)
+    d2 = randmatdiag(s2, d2)
 
     r1 = matdiagtoraw(d1)
     r2 = matdiagtoraw(d2)
@@ -257,4 +262,14 @@ if __name__ == "__main__":
 
 
 
+if __name__ == "__main__":
+    sizes = [(s1, d1, s2, d2) for s1 in range(1, MAXSIZE) 
+             for d1 in range (1, MAXSIZE) 
+             for s2 in range(1, MAXSIZE) 
+             for d2 in range(1, MAXSIZE) if s1 * d1 == s2 * d2]
+
+
+    for (s1, d1, s2, d2) in sizes:
+        for _ in range(NUMTESTSPERSIZE):
+            test_general_matmul_for_sizes(s1, d1, s2, d2)
 
