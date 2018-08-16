@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import random
 from fractions import gcd
+from tqdm import tqdm
 
-NUMTESTSPERSIZE = 100
+NUMTESTSPERSIZE = 10
 MAXSIZE = 10
 ALIGNMENTSTR = "%6s"
 EPS = 1e-3
@@ -101,7 +102,7 @@ def matmulDiagEqChunking(m1, m2):
     (S1, D1) = matdiagdim(m1)
     (S2, D2) = matdiagdim(m2)
 
-    assert (S1 == S2, S1 == D2)
+    assert S1 == S2 and D1 == D2
     DNEW = D1
     SNEW = S1
 
@@ -227,39 +228,37 @@ def test_general_matmul_for_sizes(s1, d1, s2, d2):
     r1 = matdiagtoraw(d1)
     r2 = matdiagtoraw(d2)
 
-    print("D1:")
-    printmatdiag(d1)
-    print ("-" * 10)
-    print(d1)
-    print ("-" * 10)
-    print("R1:")
-    print ("-" * 10)
-    print(r1)
-    printmatraw(r1)
+    #print ("D1:")
+    #printmatdiag(d1)
+    #print ("-" * 10)
+    #print(d1)
+    #print ("-" * 10)
+    #print("R1:")
+    #print ("-" * 10)
+    #print(r1)
+    #printmatraw(r1)
 
 
-    print ("=" * 20)
-    print ("D2:")
-    printmatdiag(d2)
-    print ("R2:")
-    printmatraw(r2)
+    #print ("=" * 20)
+    #print ("D2:")
+    #printmatdiag(d2)
+    #print ("R2:")
+    #printmatraw(r2)
 
     #dmul = matmulDiagEqChunking(d1, d2)
     dmul = matmulDiagNonEqChunking(d1, d2)
     rmul = matmulRaw(r1, r2)
 
-    print ("=" * 20)
-    print ("DMUL:")
-    printmatdiag(dmul)
-    print ("RMUL:")
-    printmatraw(rmul)
+    #print ("=" * 20)
+    #print ("DMUL:")
+    #printmatdiag(dmul)
+    #print ("RMUL:")
+    #printmatraw(rmul)
 
     LOSS =  rawmatloss(rmul, matdiagtoraw(dmul))
-    print ("=" * 20)
-    print ("loss: %s" % LOSS)
+    #print ("=" * 20)
+    #print ("loss: %s" % LOSS)
     assert (LOSS < EPS)
-
-
 
 
 if __name__ == "__main__":
@@ -269,7 +268,7 @@ if __name__ == "__main__":
              for d2 in range(1, MAXSIZE) if s1 * d1 == s2 * d2]
 
 
-    for (s1, d1, s2, d2) in sizes:
-        for _ in range(NUMTESTSPERSIZE):
+    for (s1, d1, s2, d2) in tqdm(sizes):
+        for _ in tqdm(range(NUMTESTSPERSIZE)):
             test_general_matmul_for_sizes(s1, d1, s2, d2)
 
