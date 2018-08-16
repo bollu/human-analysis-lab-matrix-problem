@@ -120,6 +120,10 @@ def newSDCoordToOld(SNEW, DNEW, SOLD, DOLD, isnew, jsnew, dnew):
 
     (SNEW, DNEW) are the new sizes
     (SOLD, DOLD) are the old sizes
+
+    returns:
+        (isold, jsold, dold) if it lies on the diagonal of the
+        old system. **None otherwise**
     """
     # shape preservation
     assert (SNEW * DNEW == SOLD * DOLD)
@@ -137,9 +141,15 @@ def newSDCoordToOld(SNEW, DNEW, SOLD, DOLD, isnew, jsnew, dnew):
     idold = i % DOLD
     jdold = j % DOLD
 
-    assert (idold == jdold)
-
-    return (isold, jsold, idold)
+    # if idold == jdold, then it's on the diagonal of the old system,
+    # otherwise it isn't, and we should consider it as 0
+    # eg: SNEW = 6, DNEW = 1, SOLD = 2, DOLD = 3
+    # inew = 0, jnew = 1, dnew = 0
+    
+    if idold == jdold:
+        return (isold, jsold, idold)
+    else:
+        return None
 
 
 
@@ -159,17 +169,26 @@ def matmulDiagNonEqChunking(m1, m2):
         for j in range(SNEW):
             for k in range (SNEW):
                 for d in range(DNEW):
-                    (iold, kold, dold) = newSDCoordToOld(SNEW, DNEW, S1, D1, i, k, d)
-                    assert iold == i
-                    assert kold == k
-                    assert dold == d
-                    m1val = m1[iold][kold][dold]
+                    maybeOld = newSDCoordToOld(SNEW, DNEW, S1, D1, i, k, d)
 
-                    (kold, jold, dold) = newSDCoordToOld(SNEW, DNEW, S2, D2, k, j, d)
-                    assert kold == k
-                    assert jold == j
-                    assert dold == d
-                    m2val = m2[kold][jold][dold]
+                    m1val = None
+                    if maybeOld is not None:
+                        (iold, kold, dold) = maybeOld
+                        m1val = m1[iold][kold][dold]
+                    else:
+                        m1val = 0
+                    assert (m1val is not None)
+
+                    m2val = None
+                    maybeOld = newSDCoordToOld(SNEW, DNEW, S2, D2, k, j, d)
+                    if maybeOld is not None:
+                        (kold, jold, dold) = maybeOld
+                        m2val = m2[kold][jold][dold]
+                    else:
+                        m2val = 0
+                    assert (m2val is not None)
+
+
 
                     out[i][j][d] += m1val * m2val
 
@@ -197,8 +216,8 @@ def rawmatloss(m1, m2):
     return rawmatnormsq(rawmatsub(m1, m2))
 
 if __name__ == "__main__":
-    d1 = randmatdiag(2, 1)
-    d2 = randmatdiag(2, 1)
+    d1 = randmatdiag(2, 3)
+    d2 = randmatdiag(3, 2)
 
     r1 = matdiagtoraw(d1)
     r2 = matdiagtoraw(d2)

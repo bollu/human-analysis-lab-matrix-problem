@@ -193,16 +193,16 @@ For X, Y to be non-zero we require that *BOTH*:
 (k, j) ∈ NONZERO(B', D')
 
 That is, all points that are in 
-{(αB + δ, βB + δ) | 0 <= α, β < B, 0 <= δ < D)} ∩ 
-{(α'B' + δ', β'B' + δ') | 0 <= α', β' < B', 0 <= δ' < D')}.
+{(αD + δ, βD + δ) | 0 <= α, β < B, 0 <= δ < D)} ∩ 
+{(α'D' + δ', β'D' + δ') | 0 <= α', β' < B', 0 <= δ' < D')}.
 
-I'll use <B> = {kB | k ∈ naturals } to borrow some ring theory notation
-(<B> = principal ideal of B). I'll use N/D to refer to the set of naturals.
+I'll use <D> = {kB | k ∈ naturals } to borrow some ring theory notation
+(<D> = principal ideal of B). I'll use N/D to refer to the set of naturals.
 [0..D)
 
 Written this way, we are looking for:
 
-(<B> + D) ∩ (<B'> + D') = 
+(<D> + D) ∩ (<B'> + D') = 
 (<B> ∩ <B'>) + (<B> ∩ D') + (<B'> ∩ D) + (D ∩ D') = 
 (<gcd(B, B')>=B0) + (?=D0)
 
