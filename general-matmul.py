@@ -3,7 +3,7 @@ import random
 from fractions import gcd
 
 ALIGNMENTSTR = "%6s"
-EPS = 1e-1
+EPS = 1e-3
 
 def matrawdim(m):
     return (len(m), len(m[0]))
@@ -109,10 +109,39 @@ def matmulDiagEqChunking(m1, m2):
         for j in range(SNEW):
             for k in range (SNEW):
                 for d in range(DNEW):
-                    print("out[%s][%s][%s](%s) += m1[%s][%s][%s](%s) * m2[%s][%s][%s](%s)" % (i, j, d, out[i][j][d], i, k, d, m1[i][k][d], k, j, d, m2[k][j][d]))
+                    print("> out[%s][%s][%s](%s) += m1[%s][%s][%s](%s) * m2[%s][%s][%s](%s)" % (i, j, d, out[i][j][d], i, k, d, m1[i][k][d], k, j, d, m2[k][j][d]))
                     out[i][j][d] += m1[i][k][d] * m2[k][j][d]
 
     return out
+
+def newSDCoordToOld(SNEW, DNEW, SOLD, DOLD, isnew, jsnew, dnew):
+    """ return an (isold, jsold, dold) pair in the old coordinate system from 
+    a point in the new coordinate system (isnew, jsnew, dnew)
+
+    (SNEW, DNEW) are the new sizes
+    (SOLD, DOLD) are the old sizes
+    """
+    # shape preservation
+    assert (SNEW * DNEW == SOLD * DOLD)
+    # new is smaller than old
+    assert (DNEW <= DOLD)
+    # new neatly partitions old
+    assert (DOLD % DNEW == 0)
+
+    i = isnew * DNEW + dnew
+    j = jsnew * DNEW + dnew
+
+    isold = i // DOLD
+    jsold = j // DOLD
+
+    idold = i % DOLD
+    jdold = j % DOLD
+
+    assert (idold == jdold)
+
+    return (isold, jsold, idold)
+
+
 
 # (m1, m2: [S][S][d])
 def matmulDiagNonEqChunking(m1, m2):
@@ -126,12 +155,23 @@ def matmulDiagNonEqChunking(m1, m2):
 
     out = [[[0 for _ in range(DNEW)] for _ in range (SNEW)] for _ in range (SNEW)]
 
-    for i in range(S1):
-        for j in range(S2):
+    for i in range(SNEW):
+        for j in range(SNEW):
             for k in range (SNEW):
                 for d in range(DNEW):
-                    print("out[%s][%s][%s](%s) += m1[%s][%s][%s](%s) * m2[%s][%s][%s](%s)" % (i, j, d, out[i][j][d], i, k, d, m1[i][k][d], k, j, d, m2[k][j][d]))
-                    out[i][j][d] += m1[i][k][d] * m2[k][j][d]
+                    (iold, kold, dold) = newSDCoordToOld(SNEW, DNEW, S1, D1, i, k, d)
+                    assert iold == i
+                    assert kold == k
+                    assert dold == d
+                    m1val = m1[iold][kold][dold]
+
+                    (kold, jold, dold) = newSDCoordToOld(SNEW, DNEW, S2, D2, k, j, d)
+                    assert kold == k
+                    assert jold == j
+                    assert dold == d
+                    m2val = m2[kold][jold][dold]
+
+                    out[i][j][d] += m1val * m2val
 
     return out
 
@@ -157,8 +197,8 @@ def rawmatloss(m1, m2):
     return rawmatnormsq(rawmatsub(m1, m2))
 
 if __name__ == "__main__":
-    d1 = randmatdiag(2, 2)
-    d2 = randmatdiag(2, 2)
+    d1 = randmatdiag(2, 1)
+    d2 = randmatdiag(2, 1)
 
     r1 = matdiagtoraw(d1)
     r2 = matdiagtoraw(d2)
@@ -180,7 +220,8 @@ if __name__ == "__main__":
     print ("R2:")
     printmatraw(r2)
 
-    dmul = matmulDiagEqChunking(d1, d2)
+    #dmul = matmulDiagEqChunking(d1, d2)
+    dmul = matmulDiagNonEqChunking(d1, d2)
     rmul = matmulRaw(r1, r2)
 
     print ("=" * 20)
