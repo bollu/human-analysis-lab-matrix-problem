@@ -3,7 +3,7 @@
 
 
 ## Question to be solved
-** [Click here for link](http://hal.cse.msu.edu/misc/join/) **
+**[Click here for link](http://hal.cse.msu.edu/misc/join/)**
 
 Consider a matrix A of size `R^((nd) * nd)`, with blocks of diagonal matrices. 
 Each diagonal matrix has `d` elements of the diagonal. The full matrix has `n * n`
