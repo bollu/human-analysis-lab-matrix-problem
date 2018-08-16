@@ -214,6 +214,18 @@ However, this is very unsatisfying to me (the arrival at what D0 is),
 so I want a cleaner proof of this.
 ```
 
+- Wrote the report, cleaned up the general matmul proof to be more conceptual.
+I need to add a figure, which I'll do now.
+
+- I think I know where the slowdown comes from. Consider multiplying 
+a diagonal matrix with a "full" matrix. In our algorithm, we will wind up
+blocking the diagonal matrix with `1x1` blocks, out of which most blocks are dead.
+What we should be able to do this this:
+    1. Block at `D' = gcd(D1, D2)`
+    2. Characterize dead blocks in `D1`, `D2` and completely ignore them
+This should allow us to regain our asymptotics, but it's not fully clear to
+me how to perform this "regain".
+
 
 
 ### Matmul
