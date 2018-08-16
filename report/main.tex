@@ -30,18 +30,12 @@
 \usepackage{enumitem}
 \usepackage{minted}
 \newminted{fortran}{fontsize=\footnotesize}
+\setminted{fontsize=\small}
 
 \usepackage{xargs}
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 
 \usepackage[colorlinks=true]{hyperref}
-\hypersetup{
-    colorlinks,
-    citecolor=black,
-    filecolor=black,
-    linkcolor=black,
-    urlcolor=black
-}
 
 \usepackage{epsfig}
 \usepackage{tabularx}
@@ -167,8 +161,7 @@ easy to multiply (since they are diagonal matrices). Hence, we block the two
 input matrices $A$ and $B$ into their diagonal blocks (they are both of the
 same character $(S, D)$).
 
-This leads us to the algorithm (all code will be in python-like pseudocode)
-\newpage
+This leads us to the algorithm (all displayed code will be in python code):
 \begin{minted}{python}
 def matmulDiagEqCharacter(m1, m2):
     (S1, D1) = matdiagdim(m1)
@@ -239,6 +232,8 @@ just with diagonal $\langle 0~0~\dots~0 \rangle$.
 We have now reduced the original problem of matrix multiplication into the
 original block matrix multiplication of matrices of the same character, $(S', D')$.
 
+
+\newpage
 The code is a little annoying due to coordinate system conversions from the
 new coordinate system of $(S', D')$ to $(S1, D1)$ and $(S2, D2)$ to be able
 to index into the old matrix. This leads to some verbosity in error checking.
@@ -247,45 +242,6 @@ incorrect-but-decievingly-simple code.
 
 
 \begin{minted}{python}
-def newSDCoordToOld(SNEW, DNEW, SOLD, DOLD, isnew, jsnew, dnew):
-    """ return an (isold, jsold, dold) pair in the old coordinate system from 
-    a point in the new coordinate system (isnew, jsnew, dnew)
-
-    (SNEW, DNEW) are the new sizes
-    (SOLD, DOLD) are the old sizes
-
-    returns:
-        (isold, jsold, dold) if it lies on the diagonal of the
-        old system. **None otherwise**
-    """
-    # shape preservation
-    assert (SNEW * DNEW == SOLD * DOLD)
-    # new is smaller than old
-    assert (DNEW <= DOLD)
-    # new neatly partitions old
-    assert (DOLD % DNEW == 0)
-
-    i = isnew * DNEW + dnew
-    j = jsnew * DNEW + dnew
-
-    isold = i // DOLD
-    jsold = j // DOLD
-
-    idold = i % DOLD
-    jdold = j % DOLD
-
-    # if idold == jdold, then it's on the diagonal of the old system,
-    # otherwise it isn't, and we should consider it as 0
-    # eg: SNEW = 6, DNEW = 1, SOLD = 2, DOLD = 3
-    # inew = 0, jnew = 1, dnew = 0
-    
-    if idold == jdold:
-        return (isold, jsold, idold)
-    else:
-        return None
-
-
-
 # (m1, m2: [S][S][d])
 def matmulDiagNonEqChunking(m1, m2):
     (S1, D1) = matdiagdim(m1)
@@ -328,6 +284,53 @@ def matmulDiagNonEqChunking(m1, m2):
     return out
 \end{minted}
 
+\newpage
+This uses an auxiliary function, \texttt{newSDCoordToOld} used to convert
+from the $(S, D)$ coordinates of the new matrix to the $(S, D)$ coordinates
+of the old matrices. The implementation is straightforward, as is listed
+below:
+
+\begin{minted}{python}
+def newSDCoordToOld(SNEW, DNEW, SOLD, DOLD, isnew, jsnew, dnew):
+    """ return an (isold, jsold, dold) pair in the old coordinate system from 
+    a point in the new coordinate system (isnew, jsnew, dnew)
+
+    (SNEW, DNEW) are the new sizes
+    (SOLD, DOLD) are the old sizes
+
+    returns:
+        (isold, jsold, dold) if it lies on the diagonal of the
+        old system. **None otherwise**
+    """
+    # shape preservation
+    assert (SNEW * DNEW == SOLD * DOLD)
+    # new is smaller than old
+    assert (DNEW <= DOLD)
+    # new neatly partitions old
+    assert (DOLD % DNEW == 0)
+
+    i = isnew * DNEW + dnew
+    j = jsnew * DNEW + dnew
+
+    isold = i // DOLD
+    jsold = j // DOLD
+
+    idold = i % DOLD
+    jdold = j % DOLD
+
+    # if idold == jdold, then it's on the diagonal of the old system,
+    # otherwise it isn't, and we should consider it as 0
+    # eg: SNEW = 6, DNEW = 1, SOLD = 2, DOLD = 3
+    # inew = 0, jnew = 1, dnew = 0
+    
+    if idold == jdold:
+        return (isold, jsold, idold)
+    else:
+        return None
+
+
+
+\end{minted}
 \paragraph{\textbf{Time Complexity:}}
 We know that $D' = gcd(D1, D2)$. We also know that $S' \times D' = S1 \times D1$.
 We can therefore derive that $S' = (S1 \times D1) / D' = (S1 \times D1) / gcd(D1, D2)$.
@@ -424,6 +427,8 @@ Gauss-Jordan algorithm (\texttt{matrix.h:invRawMatrixOurs}) to perform the
 actual inversion of the smaller system of equations.
 
 \newpage
+\begin{listing}
+    \caption{Inverting an $(S, D)$ matrix}
 \begin{minted}{python}
 def invDiagMatrix(m):
 """invert an (S, D) matrix. If the matrix is non-invertible, returns None"""
@@ -452,6 +457,7 @@ def invDiagMatrix(m):
     # return the final collected system
     return out
 \end{minted}
+\end{listing}
 
 \paragraph{\textbf{Time Complexity:}}
 The time complexity of this is $\bigO((\text{invert $S \times S$ matrix}) \times D)$.
@@ -463,6 +469,92 @@ Once again, as a quick sanity check, plugging in $D = 1$ recovers us $\bigO(S^3)
 is what we would expect to invert a general matrix. And similarly, plugging in
 $S = 1$ lets us recover $\bigO(D)$, which is what we would hope for to invert
 a diagonal matrix.
+
+\section{Experimental Evaluation}
+\subsection{Implementation}
+The implementation consists of a C++ header-only library, \texttt{matrix.h},
+which depends on \href{https://github.com/MichaelJWelsh/cml}{\texttt{CML}}, 
+a C++ math library for a reference implementation to verify correctness against.
+
+Our C++ library parametrises the type of the $(S, D)$ matrices over
+the entries of the matrix into an abstract type $T$ (well, we require $T$ to
+be a ring but this is something that cannot be expressed in C++ at the moment.
+Once C++ recieves \href{https://github.com/MichaelJWelsh/cml}{Concepts}, 
+we can expressly ask that $T$ has a ring structure).
+
+The library also encodes the $S$, $D$ values into the \textbf{type of the matrix}
+to allow for better type checking and performance efficiency
+(the data structures get allocated with the correct sizes on the
+stack, instead of having to dynamically grow). This style of API provides
+much more type safety than the untyped APIs present in Python.
+
+There is also another partial Python implementation, present in
+\texttt{python-implementation.py} which was used to independently verify
+the algorithms present here, mostly because it makes for a better pseudocode
+language.
+
+\begin{listing}
+\begin{minted}{cpp}
+// matrix.h API
+
+// D = number of dimensions per diagonal
+// S = size / number of blocks
+template<int D, int S, typename T>
+struct DiagMatrix {
+    using Diag = std::array<T, D>;
+    std::array<std::array<Diag, S>, S> blocks;
+};
+
+
+// An NxN matrix, which is used internally.
+template<int N, typename T>
+using RawMatrix = std::array< std::array<T, N>, N>;
+
+
+// Note the use of compile-type constexpr to automatically evaluate
+// the size of the resultant matrix. This requires C++17 I believe
+// for the use of `constexpr`
+template<int D1, int S1, int D2, int S2, typename T>
+DiagMatrix<gcd(D1, D2), S1 * D1 / gcd(D1, D2), T> 
+       mulDiagMatrixGeneral(DiagMatrix<D1, S1, T> m1, DiagMatrix<D2, S2, T> m2);
+
+// Multiply two matrices of the same (S, D)
+template<int D, int S, typename T>
+DiagMatrix<D, S, T> mulDiagMatrixSameSize(DiagMatrix<D, S, T> m1, 
+                                          DiagMatrix<D, S, T> m2);
+
+// Returns the inverse of a matrix. Sets the success to false
+// if the inverse does not exist.
+template<int D, int S, typename T>
+DiagMatrix<D, S, T> invDiagMatrix(DiagMatrix<D, S, T> m, bool &success);
+\end{minted}
+\caption{\texttt{matrix.h} API}
+\label{matrixhapi}
+\end{listing}
+\subsection{Correctness}
+We verify the correctness of the implementation by running the implementation
+against a reference implementation which uses the naive version of matrix
+multiplication and matrix inversion. Since the C++ library that was being used
+for matrix math ({\texttt{CML}}) was buggy, another implementation
+was constructed in python (\texttt{python-implementation.py}). 
+
+Both of these implementation validate the theory as laid out in the document.
+
+\subsection{Performance}
+I have not benchmarked this yet, but I should when I get some downtime. I 
+actually find it interesting, to see if asymptotics will win over hand-optimised
+\texttt{LAPACK} kernels. I feel for small-to-medium problem sizes,
+\texttt{LAPACK} will outperform the given asymptotically better implementation.
+It would be interesting to have results.
+
+The other thing that I am interested in this space is running 
+\href{https://polly.llvm.org/}{Polly (LLVM's loop and data locality optimizer --- link here)} on the hand-written 
+implementation, to see how much of a performance win we get. In
+theory, Polly should perform additional tiling and other loop transformations
+to eke out greater performance. As a Polly developer, it would be interesting
+to see if this succeeds or not.
+
+
 
 \section{Closing thoughts}
 I didn't try very hard to push the boundaries of what's possible, in terms 
