@@ -73,7 +73,9 @@
 \section{Introduction}
 
 We study the problem of implementing specialized operations for 
-matrix multiplication and matrix inversion on a subclass of matrices.
+matrix multiplication and matrix inversion on a subclass of matrices. The
+original problem statement 
+\href{http://hal.cse.msu.edu/misc/join/}{is available here (click for link)}.
 
 These matrices are parametrized by two variables, henceforth denoted by
 $S$, and $D$. Such matrices live in the space of $\mathbb{R}^{BD \times BD}$.
@@ -236,6 +238,95 @@ just with diagonal $\langle 0~0~\dots~0 \rangle$.
 
 We have now reduced the original problem of matrix multiplication into the
 original block matrix multiplication of matrices of the same character, $(S', D')$.
+
+The code is a little annoying due to coordinate system conversions from the
+new coordinate system of $(S', D')$ to $(S1, D1)$ and $(S2, D2)$ to be able
+to index into the old matrix. This leads to some verbosity in error checking.
+However, I prefer to reproduce the correct code, than 
+incorrect-but-decievingly-simple code.
+
+
+\begin{minted}{python}
+def newSDCoordToOld(SNEW, DNEW, SOLD, DOLD, isnew, jsnew, dnew):
+    """ return an (isold, jsold, dold) pair in the old coordinate system from 
+    a point in the new coordinate system (isnew, jsnew, dnew)
+
+    (SNEW, DNEW) are the new sizes
+    (SOLD, DOLD) are the old sizes
+
+    returns:
+        (isold, jsold, dold) if it lies on the diagonal of the
+        old system. **None otherwise**
+    """
+    # shape preservation
+    assert (SNEW * DNEW == SOLD * DOLD)
+    # new is smaller than old
+    assert (DNEW <= DOLD)
+    # new neatly partitions old
+    assert (DOLD % DNEW == 0)
+
+    i = isnew * DNEW + dnew
+    j = jsnew * DNEW + dnew
+
+    isold = i // DOLD
+    jsold = j // DOLD
+
+    idold = i % DOLD
+    jdold = j % DOLD
+
+    # if idold == jdold, then it's on the diagonal of the old system,
+    # otherwise it isn't, and we should consider it as 0
+    # eg: SNEW = 6, DNEW = 1, SOLD = 2, DOLD = 3
+    # inew = 0, jnew = 1, dnew = 0
+    
+    if idold == jdold:
+        return (isold, jsold, idold)
+    else:
+        return None
+
+
+
+# (m1, m2: [S][S][d])
+def matmulDiagNonEqChunking(m1, m2):
+    (S1, D1) = matdiagdim(m1)
+    (S2, D2) = matdiagdim(m2)
+
+    assert(S1 * D1 == S2 * D2)
+
+    DNEW = gcd(D1, D2)
+    SNEW = S1 * D1 // DNEW
+
+    out = [[[0 for _ in range(DNEW)] for _ in range (SNEW)] for _ in range (SNEW)]
+
+    for i in range(SNEW):
+        for j in range(SNEW):
+            for k in range (SNEW):
+                for d in range(DNEW):
+                    maybeOld = newSDCoordToOld(SNEW, DNEW, S1, D1, i, k, d)
+
+                    m1val = None
+                    if maybeOld is not None:
+                        (iold, kold, dold) = maybeOld
+                        m1val = m1[iold][kold][dold]
+                    else:
+                        m1val = 0
+                    assert (m1val is not None)
+
+                    m2val = None
+                    maybeOld = newSDCoordToOld(SNEW, DNEW, S2, D2, k, j, d)
+                    if maybeOld is not None:
+                        (kold, jold, dold) = maybeOld
+                        m2val = m2[kold][jold][dold]
+                    else:
+                        m2val = 0
+                    assert (m2val is not None)
+
+
+
+                    out[i][j][d] += m1val * m2val
+
+    return out
+\end{minted}
 
 \paragraph{\textbf{Time Complexity:}}
 We know that $D' = gcd(D1, D2)$. We also know that $S' \times D' = S1 \times D1$.
