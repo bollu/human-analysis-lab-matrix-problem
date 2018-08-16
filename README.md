@@ -1,4 +1,5 @@
 3 Matrix solutions to the "Human Analysis Lab" at Michigan State university.
+**[Solution Report link here](report/main.pdf)**
 
 
 ## Question to be solved
