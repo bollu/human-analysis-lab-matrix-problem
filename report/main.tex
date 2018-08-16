@@ -338,7 +338,12 @@ We can therefore derive that $S' = (S1 \times D1) / D' = (S1 \times D1) / gcd(D1
 The time complexity works out to $\bigO(S'^3 D')$ from the previous result.
 
 We can sanity check it by plugging in $(S1 = 1, D1 = N), (S2 = N, D2 = 1)$, which gives us
-$(D' = 1, S' = N)$, which brings us back to $\bigO(N^3)$, as expected.
+$(D' = 1, S' = N)$, that is, multiplying a diagonal matrix with a full matrix,
+which gives us  $\bigO(N^3)$.
+\textbf{This seems sub-optimal, because in this situation, we should be able to do
+this is $\bigO(N^2)$}. This shows that there \textbf{should be some way to gain another
+factor of $D$ in this case.} I need to think about this more carefully
+to identify where performance is lost.
 
 
 \section{Matrix inversion}
@@ -427,8 +432,6 @@ Gauss-Jordan algorithm (\texttt{matrix.h:invRawMatrixOurs}) to perform the
 actual inversion of the smaller system of equations.
 
 \newpage
-\begin{listing}
-    \caption{Inverting an $(S, D)$ matrix}
 \begin{minted}{python}
 def invDiagMatrix(m):
 """invert an (S, D) matrix. If the matrix is non-invertible, returns None"""
@@ -457,7 +460,6 @@ def invDiagMatrix(m):
     # return the final collected system
     return out
 \end{minted}
-\end{listing}
 
 \paragraph{\textbf{Time Complexity:}}
 The time complexity of this is $\bigO((\text{invert $S \times S$ matrix}) \times D)$.
@@ -540,7 +542,7 @@ was constructed in python (\texttt{python-implementation.py}).
 
 Both of these implementation validate the theory as laid out in the document.
 
-\subsection{Performance}
+\subsection{Performance (WIP)}
 I have not benchmarked this yet, but I should when I get some downtime. I 
 actually find it interesting, to see if asymptotics will win over hand-optimised
 \texttt{LAPACK} kernels. I feel for small-to-medium problem sizes,
@@ -565,15 +567,22 @@ matrices get small enough to fit in cache.
 I've also \textit{completely} ignored things that matter in the real world
 like memory latency and cache sizes --- for example, coming up with a good
 matmul algorithm is non-trivial. One of the best matmul algorithms I know of,
-goto's algorithm depends on non-trivial observations about the cache hierarchy,
+\href{https://www.cs.utexas.edu/users/pingali/CS378/2008sp/papers/gotoPaper.pdf}{the Goto algorithm}
+depends on non-trivial observations about the cache hierarchy,
 and a careful choice of blocking to make sure data can be streamed effectively
 by the processor, and to ensure that data lies in the cache hierarchy. I
 choose to ignore the real world to focus on the asymptotics here, but this
 is a very important part of writing real world code.
 
 In general, I enjoyed thinking about the assignment. I'm not fully happy with
-my proof of matrix multiplication in the general case. I wanted a nicer proof,
-but I suppose sometimes one has to settle. I do strongly resonate with Hardy's
-\say{Beauty is the first test: there is no permanent place in the world for ugly mathematics.}
+my proof of matrix multiplication in the general case, and I feel I'm
+losing some asymptotic performance I should be able to gain, so I wish to
+think a little longer about this.
+
+I also wanted a nicer proof of the general matrix multiplication, because it
+feels like it does not come from first principles, but I suppose sometimes one
+has to settle.
+
+I do strongly resonate with Hardy's opinion, \say{Beauty is the first test: there is no permanent place in the world for ugly mathematics.}
 
 \end{document}
