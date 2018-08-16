@@ -54,8 +54,8 @@
 \newcommand{\textbb}[1]{$\mathbb{#1}$}
 
 \title{Implementing matrix operations for a subclass of block matrices}
-\author{Siddharth Bhat \\ 
-    \texttt{<siddu.druid@gmail.com>} \\ 
+\author{Siddharth Bhat \\
+    \texttt{<siddu.druid@gmail.com>} \\
     \href{http://www.github.com/bollu}{\texttt{github.com/bollu}}
 }
 \date{August 16, 2018}
@@ -66,9 +66,9 @@
 
 \section{Introduction}
 
-We study the problem of implementing specialized operations for 
+We study the problem of implementing specialized operations for
 matrix multiplication and matrix inversion on a subclass of matrices. The
-original problem statement 
+original problem statement
 \href{http://hal.cse.msu.edu/misc/join/}{is available here (click for link)}.
 
 These matrices are parametrized by two variables, henceforth denoted by
@@ -80,17 +80,17 @@ $$
 \begin{bmatrix}
     D_{11} & D_{12} &\dots & D_{1S} \\
     \dots & \dots   & \dots & \dots \\
-    D_{S1} & D_{S2} & \dots &  D_{SS} 
+    D_{S1} & D_{S2} & \dots &  D_{SS}
 \end{bmatrix}
 $$
 
 This parametrization will be dubbed the \textbf{character $(S, D)$} of the matrix.
-$S$ for "size", and $D$ for "diagonal". 
+$S$ for "size", and $D$ for "diagonal".
 
-If we set $D = 1, S = *$, we regain the usual matrcies that we use, of dimension
-$S \times S$. Simiarly, if we set $D = *, S = 1$, we regain diagonal matrices
+If we set $D = 1, S = *$, we regain the usual matrices that we use, of dimension
+$S \times S$. Similarly, if we set $D = *, S = 1$, we regain diagonal matrices
 of dimension $D \times D$. These two extreme cases will be used repeatedly to
-sanity check our formulas, and make for useful examples to look back at. 
+sanity check our formulas, and make for useful examples to look back at.
 
 After all, to quote Paul Halmos, - \say{\dots the source of all great mathematics is the
 special case, the concrete example. It is frequent in mathematics that every
@@ -107,16 +107,16 @@ $\langle\texttt{row block index, column block index, diagonal index} \rangle = \
 
 The amount of space required per block will be $\bigO(D)$.
 Since the total number of blocks is $S^2$, the total space complexity of this
-matrix will be $\bigO(S^2 D)$. This is better than storing an entire 
-$S \times D$-dimensional matrix which will work out to 
+matrix will be $\bigO(S^2 D)$. This is better than storing an entire
+$S \times D$-dimensional matrix which will work out to
 $\bigO((S \times D)^2) = \bigO(S^2 D^2)$. We save space
-by a factor of $D$. 
+by a factor of $D$.
 
 \section{Matrix multiplication}
-\subsection{Matrcies that have the same $(S, D)$ character}
+\subsection{Matrices that have the same $(S, D)$ character}
 Here, we consider multiplying two matrices which have identical $D, S$. This
 will be used as a stepping stone in the theory of general matrix multiplication.
-This is also more faithful to how I understood the problem, so I choose to 
+This is also more faithful to how I understood the problem, so I choose to
 perform the exposition along a similar path.
 
 \subsubsection{A quick aside: Block multiplication}
@@ -142,9 +142,9 @@ $$
 $$
 
 Where $A_{ij}, B_{ij}$ are blocks of the original matrix. This also
-generalises to any number of blocks we wish to choose. The rough proof is
+generalizes to any number of blocks we wish to choose. The rough proof is
 that to compute an element of the output matrix, $c_{ij}$, we compute it as
-$c_{ij} = \sum_k a_{ik} b_{kj}$. Thinking computationally, the computation of 
+$c_{ij} = \sum_k a_{ik} b_{kj}$. Thinking computationally, the computation of
 matrix $C$ only ever reads from $A$ and $B$. Thus, we can perform the computation
 of elements of $C$ in any order we want, and computing per-block is a perfectly
 valid choice.
@@ -185,7 +185,7 @@ def matmulDiagEqCharacter(m1, m2):
 \end{minted}
 
 \paragraph{\textbf{Time Complexity:}}
-Clearly (from the \texttt{for}-loops in the code), the time complexity of this
+From the \texttt{for}-loops in the code, the time complexity of this
 algorithm works out to $\bigO(S^3D)$, which in comparison to the naive
 $\bigO((S \times D)^3) = \bigO(S^3 D^3)$ saves us a factor of $D^2$.
 
@@ -210,16 +210,16 @@ We know the result is another normal matrix, so $(S' = N, D' = 1)$.
 
 We tentatively conjecture that something along the lines of $\texttt{gcd}$
 or $\texttt{lcm}$ should be involved in this process, since we need to find
-a new blocking size $D'$, which would need to properly divide $D1$, $D2$ 
-intuitively for our arguments to carry over. 
+a new blocking size $D'$, which would need to properly divide $D1$, $D2$
+intuitively for our arguments to carry over.
 
 
-I ran some experiments at this point and experimentally verified that 
+I ran some experiments at this point and experimentally verified that
 $D' = gcd(D1, D2)$ is the correct relation. This fits with our previous
 examples as well. Once I had this, I began looking for an explanation.
 Note that we can block the original matrix $A$ into blocks of size $D'$, since
 
-$D'$ divides $D1$.  Simiarly, we can block $B$ as well into blocks of size
+$D'$ divides $D1$.  Similarly, we can block $B$ as well into blocks of size
 $D'$, since $D'$ also divides $D2$.
 
 This is a legal blocking, since the original blocks $D1$ get subdivided into
@@ -237,8 +237,8 @@ original block matrix multiplication of matrices of the same character, $(S', D'
 The code is a little annoying due to coordinate system conversions from the
 new coordinate system of $(S', D')$ to $(S1, D1)$ and $(S2, D2)$ to be able
 to index into the old matrix. This leads to some verbosity in error checking.
-However, I prefer to reproduce the correct code, than 
-incorrect-but-decievingly-simple code.
+However, I prefer to reproduce the correct code, than
+incorrect-but-deceivingly-simple code.
 
 
 \begin{minted}{python}
@@ -292,7 +292,7 @@ below:
 
 \begin{minted}{python}
 def newSDCoordToOld(SNEW, DNEW, SOLD, DOLD, isnew, jsnew, dnew):
-    """ return an (isold, jsold, dold) pair in the old coordinate system from 
+    """ return an (isold, jsold, dold) pair in the old coordinate system from
     a point in the new coordinate system (isnew, jsnew, dnew)
 
     (SNEW, DNEW) are the new sizes
@@ -322,7 +322,7 @@ def newSDCoordToOld(SNEW, DNEW, SOLD, DOLD, isnew, jsnew, dnew):
     # otherwise it isn't, and we should consider it as 0
     # eg: SNEW = 6, DNEW = 1, SOLD = 2, DOLD = 3
     # inew = 0, jnew = 1, dnew = 0
-    
+
     if idold == jdold:
         return (isold, jsold, idold)
     else:
@@ -362,7 +362,7 @@ a small system and generalize. Consider a matrix of the character $(S = 2, D = 2
     \right ]
 \]
 
-On making this matrix act on an arbitrary vector, we recieve:
+On making this matrix act on an arbitrary vector, we receive:
 
 
 \[
@@ -381,12 +381,12 @@ On making this matrix act on an arbitrary vector, we recieve:
         a \alpha + p \gamma \\
         b \beta + q \delta \\
         c \alpha + r \gamma \\
-        d \beta + s \delta 
+        d \beta + s \delta
     \end{bmatrix}
 \]
 
 Notice the action of the linear transform on the vector - in essence,
-the first and third coordinates of the vector are modified by the 
+the first and third coordinates of the vector are modified by the
 first and third rows of the matrix, and similarly for the second and
 fourth.
 
@@ -419,14 +419,14 @@ Hence, we can factor the matrix into two matrices as follows:
     =
     \begin{bmatrix}
         b \beta + q \delta \\
-        d \beta + s \delta 
+        d \beta + s \delta
     \end{bmatrix}
 \]
 
 This suggests that we can solve smaller sets of independent linear equations,
 whose solutions we can combine to solve the larger equation. We need to
 solve the independent linear equations, and then combine them together by
-"scattering" the solutions correctly. This is implemented in 
+"scattering" the solutions correctly. This is implemented in
 \texttt{matrix.h:invDiagMatrix}, along with an implementation of the
 Gauss-Jordan algorithm (\texttt{matrix.h:invRawMatrixOurs}) to perform the
 actual inversion of the smaller system of equations.
@@ -451,7 +451,7 @@ def invDiagMatrix(m):
         subsoln = invMatrix(subproblem)
         # system was non-invertible
         if (subsoln is None): return None
-        
+
         # scatter subsolution
         for i in range(D):
             for j in range(D):
@@ -464,7 +464,7 @@ def invDiagMatrix(m):
 \paragraph{\textbf{Time Complexity:}}
 The time complexity of this is $\bigO((\text{invert $S \times S$ matrix}) \times D)$.
 Since I implemented matrix inversion using Gauss-Jordan, this works out to
-$\bigO(S^3 \times D)$. This in contrast to the naive 
+$\bigO(S^3 \times D)$. This in contrast to the naive
 $\bigO(\text{invert $SD \times SD$ matrix}) = \bigO(S^3 D^3)$ saves us a factor of $D^2$.
 
 Once again, as a quick sanity check, plugging in $D = 1$ recovers us $\bigO(S^3)$, which
@@ -475,13 +475,13 @@ a diagonal matrix.
 \section{Experimental Evaluation}
 \subsection{Implementation}
 The implementation consists of a C++ header-only library, \texttt{matrix.h},
-which depends on \href{https://github.com/MichaelJWelsh/cml}{\texttt{CML}}, 
+which depends on \href{https://github.com/MichaelJWelsh/cml}{\texttt{CML}},
 a C++ math library for a reference implementation to verify correctness against.
 
-Our C++ library parametrises the type of the $(S, D)$ matrices over
+Our C++ library parametrizes the type of the $(S, D)$ matrices over
 the entries of the matrix into an abstract type $T$ (well, we require $T$ to
 be a ring but this is something that cannot be expressed in C++ at the moment.
-Once C++ recieves \href{https://github.com/MichaelJWelsh/cml}{Concepts}, 
+Once C++ receives \href{https://github.com/MichaelJWelsh/cml}{Concepts},
 we can expressly ask that $T$ has a ring structure).
 
 The library also encodes the $S$, $D$ values into the \textbf{type of the matrix}
@@ -492,7 +492,7 @@ much more type safety than the untyped APIs present in Python.
 
 There is also another partial Python implementation, present in
 \texttt{python-implementation.py} which was used to independently verify
-the algorithms present here, mostly because it makes for a better pseudocode
+the algorithms present here, mostly because it makes for a better pseudo-code
 language.
 
 \begin{listing}
@@ -517,12 +517,12 @@ using RawMatrix = std::array< std::array<T, N>, N>;
 // the size of the resultant matrix. This requires C++17 I believe
 // for the use of `constexpr`
 template<int D1, int S1, int D2, int S2, typename T>
-DiagMatrix<gcd(D1, D2), S1 * D1 / gcd(D1, D2), T> 
+DiagMatrix<gcd(D1, D2), S1 * D1 / gcd(D1, D2), T>
        mulDiagMatrixGeneral(DiagMatrix<D1, S1, T> m1, DiagMatrix<D2, S2, T> m2);
 
 // Multiply two matrices of the same (S, D)
 template<int D, int S, typename T>
-DiagMatrix<D, S, T> mulDiagMatrixSameSize(DiagMatrix<D, S, T> m1, 
+DiagMatrix<D, S, T> mulDiagMatrixSameSize(DiagMatrix<D, S, T> m1,
                                           DiagMatrix<D, S, T> m2);
 
 // Returns the inverse of a matrix. Sets the success to false
@@ -538,19 +538,19 @@ We verify the correctness of the implementation by running the implementation
 against a reference implementation which uses the naive version of matrix
 multiplication and matrix inversion. Since the C++ library that was being used
 for matrix math ({\texttt{CML}}) was buggy, another implementation
-was constructed in python (\texttt{python-implementation.py}). 
+was constructed in python (\texttt{python-implementation.py}).
 
 Both of these implementation validate the theory as laid out in the document.
 
 \subsection{Performance (WIP)}
-I have not benchmarked this yet, but I should when I get some downtime. I 
-actually find it interesting, to see if asymptotics will win over hand-optimised
+I have not benchmarked this yet, but I should when I get some downtime. I
+actually find it interesting, to see if asymptotics will win over hand-optimized
 \texttt{LAPACK} kernels. I feel for small-to-medium problem sizes,
 \texttt{LAPACK} will outperform the given asymptotically better implementation.
 It would be interesting to have results.
 
-The other thing that I am interested in this space is running 
-\href{https://polly.llvm.org/}{Polly (LLVM's loop and data locality optimizer --- link here)} on the hand-written 
+The other thing that I am interested in this space is running
+\href{https://polly.llvm.org/}{Polly (LLVM's loop and data locality optimizer --- link here)} on the hand-written
 implementation, to see how much of a performance win we get. In
 theory, Polly should perform additional tiling and other loop transformations
 to eke out greater performance. As a Polly developer, it would be interesting
@@ -559,14 +559,15 @@ to see if this succeeds or not.
 
 
 \section{Closing thoughts}
-I didn't try very hard to push the boundaries of what's possible, in terms 
+I didn't try very hard to push the boundaries of what's possible, in terms
 of matrix multiplication. I believe it's totally possible, by using some kind
-of strassen-like strategy combined with the shown optimisation once the
+of Strassen-like strategy combined with the shown optimization once the
 matrices get small enough to fit in cache.
 
 I've also \textit{completely} ignored things that matter in the real world
 like memory latency and cache sizes --- for example, coming up with a good
-matmul algorithm is non-trivial. One of the best matmul algorithms I know of,
+matmul algorithm is non-trivial. One of the best matrix multiplication algorithms I know of,
+and is used in the \href{https://github.com/flame/blis}{BLIS} kernel
 \href{https://www.cs.utexas.edu/users/pingali/CS378/2008sp/papers/gotoPaper.pdf}{the Goto algorithm}
 depends on non-trivial observations about the cache hierarchy,
 and a careful choice of blocking to make sure data can be streamed effectively
